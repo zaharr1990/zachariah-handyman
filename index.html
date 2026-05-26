@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>זכריה - מערכת ניהול עסק וסוכני AI</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- FontAwesome for beautiful icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="brand-section">
+                <div class="logo-placeholder">
+                    <i class="fa-solid fa-key"></i>
+                </div>
+                <div class="brand-details">
+                    <h1>זכריה מנעולן והנדימן</h1>
+                    <p>מערכת ניהול חכמה וסוכני AI • ירוחם והסביבה</p>
+                </div>
+            </div>
+            <div class="status-badge" id="statusBadge">
+                <i class="fa-solid fa-circle-check"></i> הסוכנים במצב זמין
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tabs-nav">
+            <button class="tab-btn active" onclick="switchTab('finance')">
+                <i class="fa-solid fa-wallet"></i>
+                <span>ניהול פיננסי</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('agents')">
+                <i class="fa-solid fa-robot"></i>
+                <span>סוכני תוכן ומכירות</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('tasks')">
+                <i class="fa-solid fa-list-check"></i>
+                <span>יעדים ומשימות</span>
+            </button>
+        </nav>
+
+        <main>
+            <!-- TAB 1: FINANCE -->
+            <section id="finance-tab" class="tab-content active">
+                <div class="grid-3">
+                    <div class="stat-card">
+                        <div class="stat-label">סה"כ הכנסות</div>
+                        <div class="stat-value income" id="totalIncome">₪0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">סה"כ הוצאות/השקעה</div>
+                        <div class="stat-value expense" id="totalExpenses">₪0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">רווח / הפסד נקי</div>
+                        <div class="stat-value balance" id="netProfit">₪0</div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <!-- Add Transaction Card -->
+                    <div class="card">
+                        <h2 class="card-title">
+                            <i class="fa-solid fa-plus-circle"></i>
+                            הוספת תנועה פיננסית
+                        </h2>
+                        <form id="transactionForm" onsubmit="addTransaction(event)">
+                            <div class="form-group">
+                                <label for="transType">סוג תנועה</label>
+                                <select id="transType" required>
+                                    <option value="expense">הוצאה / השקעה בעסק</option>
+                                    <option value="income">הכנסה מלקוח</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="transAmount">סכום (₪)</label>
+                                <input type="number" id="transAmount" placeholder="לדוגמה: 250" required min="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="transCategory">קטגוריה</label>
+                                <select id="transCategory" required>
+                                    <option value="ציוד וכלי עבודה">ציוד וכלי עבודה</option>
+                                    <option value="לימודים וקורסים">לימודים וקורסים</option>
+                                    <option value="מלאי צילינדרים וחלקים">מלאי צילינדרים וחלקים</option>
+                                    <option value="נסיעות ודלק">נסיעות ודלק</option>
+                                    <option value="שיווק ופרסום">שיווק ופרסום</option>
+                                    <option value="הכנסה - מנעולנות">הכנסה - מנעולנות</option>
+                                    <option value="הכנסה - הנדימן">הכנסה - הנדימן</option>
+                                    <option value="אחר">אחר</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="transDesc">תיאור</label>
+                                <input type="text" id="transDesc" placeholder="לדוגמה: מברגת אימפקט רב-בריח" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="transDate">תאריך</label>
+                                <input type="date" id="transDate" required>
+                            </div>
+                            <button type="submit" class="btn">
+                                <i class="fa-solid fa-save"></i> שמור תנועה
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Transaction List Card -->
+                    <div class="card">
+                        <h2 class="card-title">
+                            <i class="fa-solid fa-receipt"></i>
+                            פירוט תנועות אחרונות
+                        </h2>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>תאריך</th>
+                                        <th>קטגוריה</th>
+                                        <th>תיאור</th>
+                                        <th>סכום</th>
+                                        <th>פעולות</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactionsTableBody">
+                                    <!-- Dynamic rows loaded by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: AGENTS CONTENT GENERATOR -->
+            <section id="agents-tab" class="tab-content">
+                <div class="card">
+                    <h2 class="card-title">
+                        <i class="fa-solid fa-robot"></i>
+                        בחירת סוכן ליצירת תוכן
+                    </h2>
+                    <div class="agent-select-container">
+                        <div class="agent-btn active" id="btnAgentMarketing" onclick="selectAgent('marketing')">
+                            <div class="agent-btn-title">📢 סוכן שיווק ופרסום</div>
+                            <div class="agent-btn-desc">כתיבת פוסטים שיווקיים לפייסבוק וסטטוס וואטסאפ (0 ש"ח פרסום)</div>
+                        </div>
+                        <div class="agent-btn" id="btnAgentSales" onclick="selectAgent('sales')">
+                            <div class="agent-btn-title">🤝 עוזר מכירות ויחסי לקוחות</div>
+                            <div class="agent-btn-desc">ניסוח הצעות מחיר, תבניות תשובות וואטסאפ ושימור לקוחות</div>
+                        </div>
+                    </div>
+
+                    <div class="generator-ui">
+                        <h3 style="margin-bottom: 15px;" id="generatorTitle">מחולל שיווק אורגני</h3>
+                        
+                        <div class="template-grid" id="templateGrid">
+                            <!-- Dynamic template buttons loaded by JS -->
+                        </div>
+
+                        <div class="form-group" id="inputDetailsContainer">
+                            <label for="inputDetails" id="inputDetailsLabel">פרטים נוספים לעריכה (למשל: סוג עבודה, מחיר, שם לקוח):</label>
+                            <input type="text" id="inputDetails" placeholder="לדוגמה: צילינדר רב בריח, 350 ש״ח">
+                        </div>
+
+                        <button class="btn" onclick="generateAgentContent()">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            ייצר תוכן מותאם אישית
+                        </button>
+
+                        <div class="output-container">
+                            <label>התוצאה המוכנה להעתקה:</label>
+                            <button class="copy-btn" onclick="copyToClipboard()">
+                                <i class="fa-solid fa-copy"></i> העתק טקסט
+                            </button>
+                            <textarea class="output-box" id="outputBox" readonly></textarea>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: TASKS AND MILESTONES -->
+            <section id="tasks-tab" class="tab-content">
+                <div class="grid-2">
+                    <!-- Tasks list card -->
+                    <div class="card">
+                        <h2 class="card-title">
+                            <i class="fa-solid fa-list-check"></i>
+                            רשימת יעדי צמיחה ומשימות
+                        </h2>
+                        <div id="tasksList">
+                            <!-- Dynamic list items loaded by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Add task card -->
+                    <div class="card">
+                        <h2 class="card-title">
+                            <i class="fa-solid fa-circle-plus"></i>
+                            הוספת יעד או משימה חדשה
+                        </h2>
+                        <form id="taskForm" onsubmit="addTask(event)">
+                            <div class="form-group">
+                                <label for="taskText">תיאור המשימה / היעד</label>
+                                <input type="text" id="taskText" placeholder="לדוגמה: לקנות סט מפתחות מנעולן ראשוני" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="taskDate">תאריך יעד לסיום (חודש/שנה)</label>
+                                <input type="text" id="taskDate" placeholder="לדוגמה: 2026-06" required>
+                            </div>
+                            <button type="submit" class="btn">
+                                <i class="fa-solid fa-plus"></i> הוסף משימה
+                            </button>
+                        </form>
+                        
+                        <div style="margin-top: 30px; padding: 15px; background: rgba(190, 100, 50, 0.05); border: 1px dashed var(--primary); border-radius: 10px;">
+                            <h4 style="color: var(--primary); margin-bottom: 8px;">
+                                <i class="fa-solid fa-lightbulb"></i>
+                                טיפ לצמיחה עסקית:
+                            </h4>
+                            <p style="font-size: 13px; color: var(--text-muted);">
+                                זכריה, שים לב! סימון משימות לימודי הנדסאות החשמל ויעדי צמיחת המנעולנות משפיע ישירות על יציבות העסק שלך. התקדם צעד אחר צעד והשלם את אבני הדרך.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notification element -->
+    <div class="toast" id="toast">הטקסט הועתק בהצלחה! 📋</div>
+
+    <script src="app.js"></script>
+</body>
+</html>
