@@ -456,7 +456,9 @@ def handle_command(cmd_text, token, chat_id):
         send_message(token, chat_id, final_report)
 
     else:
-        send_message(token, chat_id, "❓ פקודה לא מוכרת. שלח `/help` כדי לראות את רשימת הפקודות הזמינות.")\n\ndef main():
+        send_message(token, chat_id, "❓ פקודה לא מוכרת. שלח `/help` כדי לראות את רשימת הפקודות הזמינות.")
+
+def main():
     config = load_config()
     if not config:
         print("Error: config.json not found or invalid.")
