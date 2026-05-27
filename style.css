@@ -552,3 +552,28 @@ tr:hover td {
         padding: 8px;
     }
 }
+
+/* Multi-Agent Workflow Styles */
+.flow-step-indicator {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px 12px;
+    text-align: center;
+    color: var(--text-muted);
+    transition: var(--transition);
+}
+
+.flow-step-indicator.active {
+    background: hsla(190, 100%, 50%, 0.1);
+    border-color: var(--primary);
+    color: var(--primary);
+    font-weight: bold;
+    box-shadow: 0 0 8px var(--primary-glow);
+}
+
+.flow-step-indicator.completed {
+    background: rgba(85, 255, 85, 0.05);
+    border-color: var(--success);
+    color: var(--success);
+}

@@ -132,29 +132,98 @@
                 </div>
             </section>
 
-            <!-- TAB 2: AGENTS CONTENT GENERATOR -->
+            <!-- TAB 2: AGENTS WORKSPACE -->
             <section id="agents-tab" class="tab-content">
                 <div class="card">
                     <h2 class="card-title">
-                        <i class="fa-solid fa-robot"></i>
-                        בחירת סוכן ליצירת תוכן
+                        <i class="fa-solid fa-network-wired"></i>
+                        מערך סוכני הניהול העסקי (Multi-Agent Suite)
                     </h2>
-                    <div class="agent-select-container">
-                        <div class="agent-btn active" id="btnAgentMarketing" onclick="selectAgent('marketing')">
-                            <div class="agent-btn-title">📢 סוכן שיווק ופרסום</div>
-                            <div class="agent-btn-desc">כתיבת פוסטים שיווקיים לפייסבוק וסטטוס וואטסאפ (0 ש"ח פרסום)</div>
+                    
+                    <!-- Cooperative Workflow Section -->
+                    <div class="workflow-container" style="background: rgba(0, 200, 255, 0.03); border: 1px dashed var(--primary); border-radius: 12px; padding: 20px; margin-bottom: 25px;">
+                        <h3 style="color: var(--primary); margin-bottom: 12px;">
+                            <i class="fa-solid fa-bolt"></i>
+                            מנגנון השרשרת האוטומטית (Workflow)
+                        </h3>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">
+                            הקלד יוזמה עסקית חדשה (לדוגמה: "שירות פריצת כספות" או "קמפיין ניקוי חלונות"), והרץ אותה דרך שרשרת הסוכנים לקבלת חבילת תוכניות וביצוע מושלמת.
+                        </p>
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                            <input type="text" id="workflowInitiative" placeholder="לדוגמה: השקת שירות מנעולנות חירום 24/7 בירוחם" style="flex: 1; min-width: 250px; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-color);">
+                            <select id="workflowMode" style="padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-color);">
+                                <option value="auto">ריצה אוטומטית מלאה</option>
+                                <option value="interactive">ריצה שלב-אחר-שלב (אינטראקטיבי)</option>
+                            </select>
+                            <button class="btn" onclick="startWorkflow()" style="margin: 0; width: auto; background: var(--primary); color: #fff;">
+                                <i class="fa-solid fa-play"></i> הפעל שרשרת סוכנים
+                            </button>
                         </div>
-                        <div class="agent-btn" id="btnAgentSales" onclick="selectAgent('sales')">
-                            <div class="agent-btn-title">🤝 עוזר מכירות ויחסי לקוחות</div>
-                            <div class="agent-btn-desc">ניסוח הצעות מחיר, תבניות תשובות וואטסאפ ושימור לקוחות</div>
+                        
+                        <!-- Workflow status display -->
+                        <div id="workflowStatusArea" style="display: none; margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                            <h4 style="margin-bottom: 10px; font-size: 14px;" id="workflowStepTitle">שלב נוכחי: מעבד...</h4>
+                            <div class="progress-bar-container" style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 15px;">
+                                <div id="workflowProgressBar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.4s ease;"></div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; font-size: 12px;" id="workflowStepsGrid">
+                                <div class="flow-step-indicator" id="step_rnd">💡 סוכן חדשנות</div>
+                                <div class="flow-step-indicator" id="step_strat">📊 סוכן אסטרטגיה</div>
+                                <div class="flow-step-indicator" id="step_cmo">📢 סוכן שיווק</div>
+                                <div class="flow-step-indicator" id="step_content">✍️ סוכן תוכן</div>
+                                <div class="flow-step-indicator" id="step_coach">📅 סוכן פרודוקטיביות</div>
+                            </div>
+                            <div id="interactiveControls" style="display: none; margin-top: 15px; text-align: left; display: flex; gap: 10px; justify-content: flex-end;">
+                                <button class="btn" onclick="nextWorkflowStep()" style="font-size: 12px; padding: 6px 12px; margin: 0; width: auto;">המשך לשלב הבא ◄</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="border-top: 1px solid var(--border-color); margin: 25px 0;"></div>
+
+                    <!-- Individual Agent Workspace -->
+                    <h3 style="margin-bottom: 15px;">
+                        <i class="fa-solid fa-user-gear"></i>
+                        עבודה עם סוכן בודד
+                    </h3>
+                    <div class="agent-select-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 25px;">
+                        <div class="agent-btn active" id="btnAgent_strat" onclick="selectAgent('strategist')">
+                            <div class="agent-btn-title">📊 האסטרטג</div>
+                            <div class="agent-btn-desc">ניתוח מתחרים ואופטימיזציה פיננסית</div>
+                        </div>
+                        <div class="agent-btn" id="btnAgent_cmo" onclick="selectAgent('cmo')">
+                            <div class="agent-btn-title">📢 מנהל השיווק</div>
+                            <div class="agent-btn-desc">אסטרטגיית פרסום וקמפיין ממוקד</div>
+                        </div>
+                        <div class="agent-btn" id="btnAgent_content" onclick="selectAgent('content')">
+                            <div class="agent-btn-title">✍️ יוצר התוכן</div>
+                            <div class="agent-btn-desc">כתיבת פוסטים שיווקיים ומאמרים</div>
+                        </div>
+                        <div class="agent-btn" id="btnAgent_rnd" onclick="selectAgent('rnd')">
+                            <div class="agent-btn-title">💡 סוכן חדשנות</div>
+                            <div class="agent-btn-desc">סיעור מוחות וייעול אוטומציה</div>
+                        </div>
+                        <div class="agent-btn" id="btnAgent_coach" onclick="selectAgent('coach')">
+                            <div class="agent-btn-title">📅 המאמן האישי</div>
+                            <div class="agent-btn-desc">תכנון פומודורו וקישורי יומן</div>
                         </div>
                     </div>
 
                     <div class="generator-ui">
-                        <h3 style="margin-bottom: 15px;" id="generatorTitle">מחולל שיווק אורגני</h3>
+                        <h3 style="margin-bottom: 15px;" id="generatorTitle">האסטרטג</h3>
                         
                         <div class="template-grid" id="templateGrid">
                             <!-- Dynamic template buttons loaded by JS -->
+                        </div>
+
+                        <!-- Tone Selector (Visible for Content Creator) -->
+                        <div class="form-group" id="toneSelectorContainer" style="display: none;">
+                            <label for="postTone">בחר סגנון / טון כתיבה:</label>
+                            <select id="postTone" onchange="generateAgentContent()" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-color);">
+                                <option value="community">קהילתי וחם (לפרסום שכונתי בירוחם)</option>
+                                <option value="professional">רשמי ומקצועי (להצעות מחיר ולקוחות מוסדיים)</option>
+                                <option value="selling">שיווקי ומכירתי מהיר (לסטטוסים ומבצעים)</option>
+                            </select>
                         </div>
 
                         <div class="form-group" id="inputDetailsContainer">
@@ -169,10 +238,15 @@
 
                         <div class="output-container">
                             <label>התוצאה המוכנה להעתקה:</label>
-                            <button class="copy-btn" onclick="copyToClipboard()">
-                                <i class="fa-solid fa-copy"></i> העתק טקסט
-                            </button>
-                            <textarea class="output-box" id="outputBox" readonly></textarea>
+                            <div style="display: flex; gap: 10px; float: left; margin-bottom: 10px;">
+                                <button class="copy-btn" id="btnAddToCalendar" style="display: none; position: relative; background: var(--success); color: #fff; border: 1px solid var(--success); border-radius: 4px; padding: 5px 12px; font-size: 12px; cursor: pointer;" onclick="addOutputToCalendar()">
+                                    <i class="fa-solid fa-calendar-plus"></i> הוסף ליומן
+                                </button>
+                                <button class="copy-btn" style="position: relative;" onclick="copyToClipboard()">
+                                    <i class="fa-solid fa-copy"></i> העתק טקסט
+                                </button>
+                            </div>
+                            <textarea class="output-box" id="outputBox" style="margin-top: 10px;"></textarea>
                         </div>
 
                         <div id="imageRecommendation" style="margin-top: 15px; display: none; padding: 15px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 8px; text-align: center;">
