@@ -12,8 +12,9 @@ if hasattr(sys.stdout, 'reconfigure'):
 if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
 
-CONFIG_PATH = r"C:\antigravety\projects\business_manager\config.json"
-DATA_PATH = r"C:\antigravety\projects\business_manager\data.json"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_PATH = os.path.join(SCRIPT_DIR, "config.json")
+DATA_PATH = os.path.join(SCRIPT_DIR, "data.json")
 
 # Load templates from notifier logic
 from telegram_notifier import ad_options, weekly_schedule

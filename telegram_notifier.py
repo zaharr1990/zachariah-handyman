@@ -5,8 +5,9 @@ import sys
 import datetime
 import os
 
-# Configuration path
-CONFIG_PATH = r"C:\antigravety\projects\business_manager\config.json"
+# Configuration path (relative to script directory)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_PATH = os.path.join(SCRIPT_DIR, "config.json")
 GITHUB_PAGES_BASE = "https://zaharr1990.github.io/zachariah-handyman/"
 
 # Brand name
