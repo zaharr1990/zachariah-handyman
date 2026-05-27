@@ -197,7 +197,7 @@ def handle_command(cmd_text, token, chat_id):
         
         from telegram_notifier import ad_images, GITHUB_PAGES_BASE
         photo_filename = ad_images[post_idx]
-        photo_url = f"{GITHUB_PAGES_BASE}{photo_filename}"
+        photo_url = f"{GITHUB_PAGES_BASE}{photo_filename}?t={int(time.time())}"
         
         caption_text = f"📝 *הפוסט השיווקי שלך מוכן להעתקה:*\n\n{post_text}\n\n*(אל תשכח להוסיף את מספר הטלפון שלך בסוף הפוסט!)*"
         

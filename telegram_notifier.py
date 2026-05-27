@@ -125,9 +125,12 @@ def run_notifications(is_test=False):
     token = config.get("telegram_bot_token")
     chat_id = config.get("telegram_chat_id")
     
+    import time
+    cache_buster = int(time.time())
+    
     if is_test:
         test_caption = f"📸 *חיבור בוט טלגרם של {BRAND_NAME} עבר בהצלחה!*\n\nמעכשיו תקבל כאן התראות פרסום מסודרות, כולל התמונה המעוצבת והטקסט להעתקה מהירה."
-        test_photo = f"{GITHUB_PAGES_BASE}ad_locksmith.png"
+        test_photo = f"{GITHUB_PAGES_BASE}ad_locksmith.png?t={cache_buster}"
         send_telegram_photo(token, chat_id, test_photo, test_caption)
         print("Test photo message sent successfully.")
         return
@@ -141,7 +144,7 @@ def run_notifications(is_test=False):
     sched = weekly_schedule[today]
     ad_text = ad_options[sched["ad_id"]]
     photo_filename = ad_images[sched["ad_id"]]
-    photo_url = f"{GITHUB_PAGES_BASE}{photo_filename}"
+    photo_url = f"{GITHUB_PAGES_BASE}{photo_filename}?t={cache_buster}"
     
     msg = f"""📢 *התראת פרסום שבועי - {BRAND_NAME}*
 
