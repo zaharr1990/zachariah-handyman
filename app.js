@@ -9,7 +9,11 @@ const initialData = {
         { id: 1, text: "לסיים לימודי הנדסאי חשמל במכללה", completed: false, targetDate: "2026-10" },
         { id: 2, text: "לרכוש צילינדרים לפלדלת ומנעולים ראשוניים למלאי", completed: false, targetDate: "2026-06" },
         { id: 3, text: "לפרסם פוסט היכרות ראשון בקבוצות ירוחם בפייסבוק", completed: false, targetDate: "2026-06" },
-        { id: 4, text: "להגיע ל-10 לקוחות ראשונים במנעולנות והנדימן", colet currentAgent = 'strategist';
+        { id: 4, text: "להגיע ל-10 לקוחות ראשונים במנעולנות והנדימן", completed: false, targetDate: "2026-06" }
+    ]
+};
+
+let currentAgent = 'strategist';
 let selectedTemplateIndex = 0;
 
 // Templates definitions
