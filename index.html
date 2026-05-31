@@ -34,7 +34,11 @@
             </button>
             <button class="tab-btn" onclick="switchTab('agents')">
                 <i class="fa-solid fa-robot"></i>
-                <span>סוכני תוכן ומכירות</span>
+                <span>שאל את המערכת</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('crm')">
+                <i class="fa-solid fa-users-gear"></i>
+                <span>CRM ופניות</span>
             </button>
             <button class="tab-btn" onclick="switchTab('tasks')">
                 <i class="fa-solid fa-list-check"></i>
@@ -132,130 +136,201 @@
                 </div>
             </section>
 
-            <!-- TAB 2: AGENTS WORKSPACE -->
+            <!-- TAB 2: AGENTS WORKSPACE (Multi-Agent Analytics) -->
             <section id="agents-tab" class="tab-content">
                 <div class="card">
                     <h2 class="card-title">
-                        <i class="fa-solid fa-network-wired"></i>
-                        מערך סוכני הניהול העסקי (Multi-Agent Suite)
+                        <i class="fa-solid fa-robot"></i>
+                        שאל את מערכת הסוכנים - Multi-Agent Analytics
                     </h2>
-                    
-                    <!-- Cooperative Workflow Section -->
-                    <div class="workflow-container" style="background: rgba(0, 200, 255, 0.03); border: 1px dashed var(--primary); border-radius: 12px; padding: 20px; margin-bottom: 25px;">
-                        <h3 style="color: var(--primary); margin-bottom: 12px;">
-                            <i class="fa-solid fa-bolt"></i>
-                            מנגנון השרשרת האוטומטית (Workflow)
-                        </h3>
-                        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">
-                            הקלד יוזמה עסקית חדשה (לדוגמה: "שירות פריצת כספות" או "קמפיין ניקוי חלונות"), והרץ אותה דרך שרשרת הסוכנים לקבלת חבילת תוכניות וביצוע מושלמת.
-                        </p>
-                        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                            <input type="text" id="workflowInitiative" placeholder="לדוגמה: השקת שירות מנעולנות חירום 24/7 בירוחם" style="flex: 1; min-width: 250px; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-color);">
-                            <select id="workflowMode" style="padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-color);">
-                                <option value="auto">ריצה אוטומטית מלאה</option>
-                                <option value="interactive">ריצה שלב-אחר-שלב (אינטראקטיבי)</option>
-                            </select>
-                            <button class="btn" onclick="startWorkflow()" style="margin: 0; width: auto; background: var(--primary); color: #fff;">
-                                <i class="fa-solid fa-play"></i> הפעל שרשרת סוכנים
-                            </button>
-                        </div>
-                        
-                        <!-- Workflow status display -->
-                        <div id="workflowStatusArea" style="display: none; margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px;">
-                            <h4 style="margin-bottom: 10px; font-size: 14px;" id="workflowStepTitle">שלב נוכחי: מעבד...</h4>
-                            <div class="progress-bar-container" style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 15px;">
-                                <div id="workflowProgressBar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.4s ease;"></div>
-                            </div>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; font-size: 12px;" id="workflowStepsGrid">
-                                <div class="flow-step-indicator" id="step_rnd">💡 סוכן חדשנות</div>
-                                <div class="flow-step-indicator" id="step_strat">📊 סוכן אסטרטגיה</div>
-                                <div class="flow-step-indicator" id="step_cmo">📢 סוכן שיווק</div>
-                                <div class="flow-step-indicator" id="step_content">✍️ סוכן תוכן</div>
-                                <div class="flow-step-indicator" id="step_coach">📅 סוכן פרודוקטיביות</div>
-                            </div>
-                            <div id="interactiveControls" style="display: none; margin-top: 15px; text-align: left; display: flex; gap: 10px; justify-content: flex-end;">
-                                <button class="btn" onclick="nextWorkflowStep()" style="font-size: 12px; padding: 6px 12px; margin: 0; width: auto;">המשך לשלב הבא ◄</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div style="border-top: 1px solid var(--border-color); margin: 25px 0;"></div>
+                    <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">
+                        כתוב שאלה, בקשה או העלה נתון. כל הסוכנים האנליסטים מקשיבים ברקע, הסוכן המתאים ביותר יזהה את הפנייה, ינתח את המידע ויפיק תשובה ממוקדת בליווי גרפי.
+                    </p>
 
-                    <!-- Individual Agent Workspace -->
-                    <h3 style="margin-bottom: 15px;">
-                        <i class="fa-solid fa-user-gear"></i>
-                        עבודה עם סוכן בודד
-                    </h3>
-                    <div class="agent-select-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 25px;">
-                        <div class="agent-btn active" id="btnAgent_strat" onclick="selectAgent('strategist')">
-                            <div class="agent-btn-title">📊 האסטרטג</div>
-                            <div class="agent-btn-desc">ניתוח מתחרים ואופטימיזציה פיננסית</div>
-                        </div>
-                        <div class="agent-btn" id="btnAgent_cmo" onclick="selectAgent('cmo')">
-                            <div class="agent-btn-title">📢 מנהל השיווק</div>
-                            <div class="agent-btn-desc">אסטרטגיית פרסום וקמפיין ממוקד</div>
-                        </div>
-                        <div class="agent-btn" id="btnAgent_content" onclick="selectAgent('content')">
-                            <div class="agent-btn-title">✍️ יוצר התוכן</div>
-                            <div class="agent-btn-desc">כתיבת פוסטים שיווקיים ומאמרים</div>
-                        </div>
-                        <div class="agent-btn" id="btnAgent_rnd" onclick="selectAgent('rnd')">
-                            <div class="agent-btn-title">💡 סוכן חדשנות</div>
-                            <div class="agent-btn-desc">סיעור מוחות וייעול אוטומציה</div>
-                        </div>
-                        <div class="agent-btn" id="btnAgent_coach" onclick="selectAgent('coach')">
-                            <div class="agent-btn-title">📅 המאמן האישי</div>
-                            <div class="agent-btn-desc">תכנון פומודורו וקישורי יומן</div>
-                        </div>
-                    </div>
-
-                    <div class="generator-ui">
-                        <h3 style="margin-bottom: 15px;" id="generatorTitle">האסטרטג</h3>
-                        
-                        <div class="template-grid" id="templateGrid">
-                            <!-- Dynamic template buttons loaded by JS -->
-                        </div>
-
-                        <!-- Tone Selector (Visible for Content Creator) -->
-                        <div class="form-group" id="toneSelectorContainer" style="display: none;">
-                            <label for="postTone">בחר סגנון / טון כתיבה:</label>
-                            <select id="postTone" onchange="generateAgentContent()" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-color);">
-                                <option value="community">קהילתי וחם (לפרסום שכונתי בירוחם)</option>
-                                <option value="professional">רשמי ומקצועי (להצעות מחיר ולקוחות מוסדיים)</option>
-                                <option value="selling">שיווקי ומכירתי מהיר (לסטטוסים ומבצעים)</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group" id="inputDetailsContainer">
-                            <label for="inputDetails" id="inputDetailsLabel">פרטים נוספים לעריכה (למשל: סוג עבודה, מחיר, שם לקוח):</label>
-                            <input type="text" id="inputDetails" placeholder="לדוגמה: צילינדר רב בריח, 350 ש״ח">
-                        </div>
-
-                        <button class="btn" onclick="generateAgentContent()">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i>
-                            ייצר תוכן מותאם אישית
+                    <div class="agent-query-container" style="display: flex; gap: 12px; margin-bottom: 20px;">
+                        <textarea id="agentQueryInput" placeholder="לדוגמה: 'האם העסק שלי רווחי?', 'איך מומלץ לפרסם בפייסבוק?', 'רעיון לקידום שירות מנעולנות', 'מה מתוכנן בלו&quot;ז השבוע?'..." style="flex: 1; min-height: 80px; padding: 12px; font-size: 15px; resize: none; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; color: #fff;"></textarea>
+                        <button class="btn" onclick="askAgentSystem()" style="width: auto; padding: 0 24px; display: flex; align-items: center; justify-content: center; height: 80px; margin: 0; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 8px; border: none; cursor: pointer;">
+                            <i class="fa-solid fa-paper-plane" style="font-size: 20px; color: var(--bg-main);"></i>
                         </button>
+                    </div>
 
-                        <div class="output-container">
-                            <label>התוצאה המוכנה להעתקה:</label>
-                            <div style="display: flex; gap: 10px; float: left; margin-bottom: 10px;">
-                                <button class="copy-btn" id="btnAddToCalendar" style="display: none; position: relative; background: var(--success); color: #fff; border: 1px solid var(--success); border-radius: 4px; padding: 5px 12px; font-size: 12px; cursor: pointer;" onclick="addOutputToCalendar()">
-                                    <i class="fa-solid fa-calendar-plus"></i> הוסף ליומן
-                                </button>
-                                <button class="copy-btn" style="position: relative;" onclick="copyToClipboard()">
-                                    <i class="fa-solid fa-copy"></i> העתק טקסט
-                                </button>
+                    <!-- Routed Agent Indicator -->
+                    <div id="routedAgentIndicator" class="routed-agent-badge" style="display: none; align-items: center; gap: 10px; background: rgba(0, 200, 255, 0.08); border: 1px solid var(--primary); padding: 10px 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <i class="fa-solid fa-circle-nodes" style="color: var(--primary);"></i>
+                        <span style="font-weight: 700; color: #fff;">סוכן אנליסט פעיל:</span>
+                        <span id="activeAgentName" style="color: var(--primary); font-weight: 800;">האסטרטג</span>
+                    </div>
+
+                    <!-- Output Interface -->
+                    <div id="agentResponseArea" style="display: none;">
+                        <div class="grid-2">
+                            <!-- Answer text -->
+                            <div class="output-container" style="margin-top: 0; position: relative;">
+                                <label style="font-weight: 700; color: #fff; margin-bottom: 10px; display: block;">תשובת האנליסט:</label>
+                                <textarea class="output-box" id="outputBox" readonly style="min-height: 250px; background: rgba(0,0,0,0.4); border-color: rgba(255,255,255,0.1); width: 100%; color: #e0e0e0; padding: 15px; border-radius: 8px; resize: vertical;"></textarea>
+                                <div style="margin-top: 10px; text-align: left; display: flex; gap: 10px; justify-content: flex-end;">
+                                    <button class="copy-btn" id="btnAddToCalendar" style="display: none; position: static; background: var(--success); color: #fff; border: 1px solid var(--success); border-radius: 4px; padding: 6px 15px; font-size: 13px; cursor: pointer;" onclick="addOutputToCalendar()">
+                                        <i class="fa-solid fa-calendar-plus"></i> הוסף ליומן
+                                    </button>
+                                    <button class="copy-btn" style="position: static;" onclick="copyToClipboard()">
+                                        <i class="fa-solid fa-copy"></i> העתק טקסט
+                                    </button>
+                                </div>
                             </div>
-                            <textarea class="output-box" id="outputBox" style="margin-top: 10px;"></textarea>
+                            
+                            <!-- Custom Chart Visuals container -->
+                            <div class="card" style="margin-bottom: 0; background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.05); padding: 20px; display: flex; flex-direction: column; justify-content: center;">
+                                <h3 style="font-size: 15px; font-weight: 700; color: var(--primary); margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-chart-simple"></i>
+                                    אינפוגרפיקה מלווה
+                                </h3>
+                                <div id="agentVisualsContainer" style="min-height: 200px; display: flex; align-items: center; justify-content: center; width: 100%;">
+                                    <!-- Dynamic SVG / CSS graphs rendered by JS -->
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                </div>
+            </section>
 
-                        <div id="imageRecommendation" style="margin-top: 15px; display: none; padding: 15px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 8px; text-align: center;">
-                            <p style="font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 10px;">
-                                <i class="fa-solid fa-image"></i> תמונת המותג המומלצת לפרסום עם פוסט זה:
-                            </p>
-                            <img id="recommendedAdImage" src="ad_locksmith.png" alt="תמונת פרסום" style="max-width: 100%; max-height: 250px; border-radius: 8px; border: 1px solid var(--primary); box-shadow: 0 0 15px var(--primary-glow);">
-                            <p id="recommendedAdImageDesc" style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">קובץ התמונה שמור בתיקיית העסק שלך תחת השם: ad_locksmith.png</p>
+            <!-- TAB 3: CRM & LEADS MANAGEMENT -->
+            <section id="crm-tab" class="tab-content">
+                <!-- CRM Metrics Grid -->
+                <div class="grid-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 24px;">
+                    <div class="stat-card">
+                        <div class="stat-label">סה"כ פניות (לידים)</div>
+                        <div class="stat-value" id="crmTotalLeads" style="color: #fff;">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">עסקאות שנסגרו</div>
+                        <div class="stat-value" id="crmClosedLeads" style="color: var(--success);">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">עסקאות שלא נסגרו</div>
+                        <div class="stat-value" id="crmLostLeads" style="color: var(--danger);">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">אחוז המרה (CR)</div>
+                        <div class="stat-value" id="crmConversionRate" style="color: var(--primary);">0%</div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <!-- Form Card -->
+                    <div class="card">
+                        <h2 class="card-title">
+                            <i class="fa-solid fa-user-plus"></i>
+                            תיעוד פנייה חדשה (ליד)
+                        </h2>
+                        <form id="leadForm" onsubmit="addLead(event)">
+                            <div class="form-group">
+                                <label for="leadClient">שם הלקוח / פרטי פנייה</label>
+                                <input type="text" id="leadClient" placeholder="לדוגמה: ישראל ישראלי - ירוחם" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="leadService">סוג עבודה / שירות מבוקש</label>
+                                <input type="text" id="leadService" placeholder="לדוגמה: החלפת צילינדר פלדלת" required>
+                            </div>
+                            <div class="grid-2" style="gap: 15px; display: grid; grid-template-columns: 1fr 1fr;">
+                                <div class="form-group">
+                                    <label for="leadSource">מקור הגעה</label>
+                                    <select id="leadSource" required>
+                                        <option value="וואטסאפ">💬 וואטסאפ</option>
+                                        <option value="פייסבוק">👥 פייסבוק</option>
+                                        <option value="גוגל מפות">📍 גוגל מפות</option>
+                                        <option value="המלצה">⭐ המלצה</option>
+                                        <option value="אחר">🔍 אחר</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="leadClosed">האם נסגרה עסקה?</label>
+                                    <select id="leadClosed" onchange="toggleLeadReasonField()" required>
+                                        <option value="yes">✔️ כן, נסגרה עסקה</option>
+                                        <option value="no">❌ לא, לא נסגרה</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- Reason for not closing (hidden by default) -->
+                            <div class="form-group" id="leadReasonGroup" style="display: none;">
+                                <label for="leadReason">סיבת אי-סגירה</label>
+                                <select id="leadReason">
+                                    <option value="מחיר יקר">💵 מחיר יקר</option>
+                                    <option value="זמן הגעה">🕒 זמן הגעה ארוך</option>
+                                    <option value="חוסר זמינות">📴 חוסר זמינות שלי</option>
+                                    <option value="אחר">❓ סיבה אחרת</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn">
+                                <i class="fa-solid fa-user-check"></i> שמור פנייה
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- CRO AI Agent Panel -->
+                    <div class="card" style="border: 1px solid var(--primary); background: rgba(0, 200, 255, 0.02); height: fit-content;">
+                        <h2 class="card-title" style="color: var(--primary); border-bottom-color: var(--primary-glow); display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-chart-line"></i>
+                            סוכן אסטרטגיה ושיפור המרה (CRO Analyst)
+                        </h2>
+                        
+                        <div class="cro-insights-container" style="display: flex; flex-direction: column; gap: 15px;">
+                            <div class="cro-insight-block" style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border-right: 4px solid var(--primary);">
+                                <h4 style="color: #fff; font-size: 14px; margin-bottom: 5px;">✍️ אסטרטגיית פוסטים ותוכן מותאמת:</h4>
+                                <p id="croContentStrategy" style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+                                    מחשב אסטרטגיה מבוססת מקורות הגעה...
+                                </p>
+                            </div>
+                            
+                            <div class="cro-insight-block" style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border-right: 4px solid var(--success);">
+                                <h4 style="color: #fff; font-size: 14px; margin-bottom: 5px;">💬 טיפול בהתנגדויות וסגירת עסקאות:</h4>
+                                <p id="croObjectionStrategy" style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+                                    מחשב טיפול בהתנגדויות מובילות...
+                                </p>
+                            </div>
+
+                            <div class="cro-charts-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+                                <!-- Objection breakdown chart -->
+                                <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.03);">
+                                    <h5 style="font-size: 13px; color: #fff; margin-bottom: 10px; text-align: center; font-weight: 700;">התפלגות התנגדויות</h5>
+                                    <div id="croObjectionChart" style="height: 100px; display: flex; flex-direction: column; justify-content: center; gap: 5px;">
+                                        <!-- Rendered by JS -->
+                                    </div>
+                                </div>
+                                <!-- Source breakdown chart -->
+                                <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.03);">
+                                    <h5 style="font-size: 13px; color: #fff; margin-bottom: 10px; text-align: center; font-weight: 700;">מקורות הגעה מובילים</h5>
+                                    <div id="croSourceChart" style="height: 100px; display: flex; flex-direction: column; justify-content: center; gap: 5px;">
+                                        <!-- Rendered by JS -->
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Leads History Table -->
+                <div class="card" style="margin-top: 24px;">
+                    <h2 class="card-title">
+                        <i class="fa-solid fa-list-ul"></i>
+                        היסטוריית פניות ומעקב המרות
+                    </h2>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>תאריך</th>
+                                    <th>פרטי פנייה / לקוח</th>
+                                    <th>סוג עבודה</th>
+                                    <th>מקור הגעה</th>
+                                    <th>עסקה נסגרה?</th>
+                                    <th>סיבת אי-סגירה</th>
+                                    <th>פעולות</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leadsTableBody">
+                                <!-- Dynamic rows loaded by JS -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>

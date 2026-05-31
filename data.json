@@ -47,5 +47,43 @@
       "completed": false,
       "targetDate": "2026-11"
     }
+  ],
+  "leads": [
+    {
+      "id": 1717170001,
+      "date": "2026-05-28",
+      "client": "אבי כהן",
+      "service": "החלפת צילינדר",
+      "source": "וואטסאפ",
+      "closed": true,
+      "reason": ""
+    },
+    {
+      "id": 1717170002,
+      "date": "2026-05-29",
+      "client": "רונית לוי",
+      "service": "תליית טלוויזיה",
+      "source": "פייסבוק",
+      "closed": false,
+      "reason": "מחיר יקר"
+    },
+    {
+      "id": 1717170003,
+      "date": "2026-05-30",
+      "client": "יוסי מזרחי",
+      "service": "פריצת מנעול",
+      "source": "גוגל",
+      "closed": true,
+      "reason": ""
+    },
+    {
+      "id": 1717170004,
+      "date": "2026-05-31",
+      "client": "מיכל גולד",
+      "service": "הרכבת ארון",
+      "source": "המלצה",
+      "closed": false,
+      "reason": "זמן הגעה"
+    }
   ]
 }

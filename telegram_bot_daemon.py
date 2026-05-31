@@ -118,6 +118,118 @@ def handle_command(cmd_text, token, chat_id):
 """
         send_message(token, chat_id, help_msg)
 
+    # CRM STATS
+    elif cmd == '/crm':
+        data = load_data()
+        leads = data.get("leads", [])
+        total_leads = len(leads)
+        closed_leads = len([l for l in leads if l.get("closed")])
+        lost_leads = total_leads - closed_leads
+        cr = round((closed_leads / total_leads * 100)) if total_leads > 0 else 0
+        
+        objections = {}
+        sources = {}
+        for l in leads:
+            src = l.get("source", "אחר")
+            sources[src] = sources.get(src, 0) + 1
+            if not l.get("closed"):
+                reason = l.get("reason", "לא צוין")
+                objections[reason] = objections.get(reason, 0) + 1
+                
+        top_obj = max(objections, key=objections.get) if objections else "אין"
+        top_src = max(sources, key=sources.get) if sources else "אין"
+        
+        objection_strategy = ""
+        if top_obj == "מחיר יקר":
+            objection_strategy = "💵 התנגדות המחיר היא המובילה. מומלץ להדגיש את המקומיות (הגעה תוך 15 דקות ללא דמי נסיעה מופקעים מבאר שבע/דימונה) ואת תעודת המקצועיות/אחריות."
+        elif top_obj == "זמן הגעה":
+            objection_strategy = "🕒 זמן הגעה ארוך מונע עסקאות. ציין מיד זמן הגעה מדויק ומהיר ('אצלך בתוך 15 דקות')."
+        elif top_obj == "חוסר זמינות":
+            objection_strategy = "📴 חוסר זמינות מונע סגירות. הגדר מענה אוטומטי בוואטסאפ כשאתה לא פנוי או לומד."
+        else:
+            objection_strategy = "הקפד להסביר את התהליך ולתת הצעת מחיר שקופה מראש."
+            
+        crm_msg = f"""📊 *דו\"ש CRM ויחסי המרה - זכריה*
+        
+👥 *סה\"כ פניות (לידים):* {total_leads}
+✔️ *עסקאות שנסגרו:* {closed_leads}
+❌ *עסקאות שלא נסגרו:* {lost_leads}
+📈 *אחוז המרה (CR):* **{cr}%**
+
+⭐ *מקור הגעה מוביל:* {top_src}
+💵 *התנגדות נפוצה:* {top_obj}
+
+💡 *המלצת סוכן ה-CRO:*
+{objection_strategy}"""
+        send_message(token, chat_id, crm_msg)
+
+    # ADD LEAD
+    elif cmd == '/lead':
+        raw_args = cmd_text[len('/lead'):].strip()
+        if not raw_args:
+            send_msg = """❌ מבנה פקודה לא תקין. השתמש בפורמט:
+`/lead שם_הלקוח, סוג_העבודה, מקור, כן/לא, סיבה_אם_לא`
+
+דוגמאות:
+• `/lead משה כהן, החלפת צילינדר, וואטסאפ, כן`
+• `/lead דוד לוי, תליית טלוויזיה, פייסבוק, לא, מחיר יקר`"""
+            send_message(token, chat_id, send_msg)
+            return
+            
+        if ',' in raw_args:
+            args = [a.strip() for a in raw_args.split(',')]
+        else:
+            args = raw_args.split()
+            
+        if len(args) < 4:
+            send_message(token, chat_id, "❌ חסרים פרטים. השתמש בפורמט: `שם, עבודה, מקור, כן/לא, [סיבה_אם_לא]`")
+            return
+            
+        client = args[0]
+        service = args[1]
+        source = args[2]
+        closed_str = args[3].lower()
+        closed = closed_str in ['כן', 'yes', 'true', 'closed', 'y', '1']
+        reason = args[4] if len(args) > 4 else ""
+        
+        valid_sources = {"וואטסאפ": "וואטסאפ", "whatsapp": "וואטסאפ", 
+                         "פייסבוק": "פייסבוק", "facebook": "פייסבוק",
+                         "גוגל": "גוגל מפות", "google": "גוגל מפות", "מפות": "גוגל מפות",
+                         "המלצה": "המלצה", "recommendation": "המלצה"}
+        source_clean = valid_sources.get(source.lower(), source)
+        
+        if not closed and not reason:
+            reason = "אחר"
+            
+        data = load_data()
+        if "leads" not in data:
+            data["leads"] = []
+            
+        new_lead = {
+            "id": int(time.time()),
+            "date": datetime.date.today().isoformat(),
+            "client": client,
+            "service": service,
+            "source": source_clean,
+            "closed": closed,
+            "reason": reason
+        }
+        data["leads"].append(new_lead)
+        
+        if save_data(data):
+            status_text = "✔️ נסגר בהצלחה!" if closed else f"❌ לא נסגר ({reason})"
+            success_msg = f"""✅ *הפנייה נרשמה בהצלחה!*
+            
+👤 *לקוח:* {client}
+🛠️ *עבודה:* {service}
+📢 *מקור:* {source_clean}
+🚦 *סטטוס:* {status_text}
+
+(הנתונים עלו לאתר שלך)"""
+            send_message(token, chat_id, success_msg)
+        else:
+            send_message(token, chat_id, "❌ תקלה בשמירת הפנייה במערכת.")
+
     # 2. STATUS
     elif cmd == '/status':
         data = load_data()
@@ -556,6 +668,10 @@ def handle_free_text(text, token, chat_id):
 2. *הבחנה בבעיות*: אם המפתח מסתובב קשה, הצע לשמן או להחליף צילינדר במקום.
 3. *החלפת דירה*: שאל דיירים חדשים אם הם החליפו מפתח כשנכנסו. רובם לא חושבים על זה וישמחו להחליף צילינדר לשקט נפשי."""
         send_message(token, chat_id, guide)
+
+    elif any(kw in text_lower for kw in ["המרה", "ליד", "פניות", "סגיר", "התנגד"]):
+        handle_command('/crm', token, chat_id)
+        return
 
     elif any(kw in text_lower for kw in ["היי", "שלום", "בוקר", "ערב", "תודה"]):
         send_message(token, chat_id, "היי זכריה! שמח לשמוע ממך. 😊\n\nספר לי, איזה אתגר עסקי או שאלה יש לך היום? תוכל לשאול אותי על שיווק, תמחור, מנעולנות או לבקש לדעת מה לפרסם היום.")

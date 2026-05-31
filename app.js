@@ -305,396 +305,456 @@ function addTask(e) {
     showToast("המשימה נוספה בהצלחה! 🚀");
 }
 
-// Agent AI Generator Logic
-function selectAgent(agentId) {
-    currentAgent = agentId;
-    selectedTemplateIndex = 0;
-    
-    // Toggle active state in buttons
-    const agentIds = ['strat', 'cmo', 'content', 'rnd', 'coach'];
-    agentIds.forEach(id => {
-        const btn = document.getElementById(`btnAgent_${id}`);
-        if (btn) {
-            btn.className = `agent-btn ${agentId.startsWith(id) || id.startsWith(agentId) ? 'active' : ''}`;
-        }
-    });
-    
-    // Show/hide Tone Selector (only for content creator)
-    const toneSelector = document.getElementById('toneSelectorContainer');
-    if (toneSelector) {
-        toneSelector.style.display = agentId === 'content' ? 'block' : 'none';
-    }
-    
-    // Show/hide Add to Calendar button
-    const calendarBtn = document.getElementById('btnAddToCalendar');
-    if (calendarBtn) {
-        calendarBtn.style.display = 'none'; // reset
-    }
-    
-    // Update titles and inputs
-    const title = document.getElementById('generatorTitle');
-    const label = document.getElementById('inputDetailsLabel');
-    const input = document.getElementById('inputDetails');
-    
-    const titles = {
-        strategist: "📊 סוכן אסטרטגיה וניתוח (The Strategist)",
-        cmo: "📢 סוכן מנהל שיווק דיגיטלי (The CMO)",
-        content: "✍️ סוכן קריאייטיב ויצירת תוכן (The Content Creator)",
-        rnd: "💡 סוכן מחקר, פיתוח וחדשנות (The R&D Agent)",
-        coach: "📅 סוכן אופטימיזציה ואימון אישי (The Coach)"
-    };
-    
-    const inputLabels = {
-        strategist: "הזן שם שירות או יוזמה עסקית לניתוח:",
-        cmo: "הזן נושא לקמפיין שיווקי:",
-        content: "הזן מספר טלפון ליצירת הנעה לפעולה (CTA):",
-        rnd: "הזן את האתגר או הבעיה בעסק לסיעור מוחות:",
-        coach: "הזן את סוג המשימה לניהול זמן:"
-    };
-    
-    const inputPlaceholders = {
-        strategist: "לדוגמה: החלפת מנגנונים לדלתות כניסה",
-        cmo: "לדוגמה: קמפיין תליית מסכים בשישי",
-        content: "לדוגמה: 050-1234567",
-        rnd: "לדוגמה: קושי בהשגת לקוחות ראשונים",
-        coach: "לדוגמה: הכנות שיווקיות ורכישת מלאי מנעולים"
-    };
-    
-    if (title) title.innerText = titles[agentId] || "עוזר AI";
-    if (label) label.innerText = inputLabels[agentId] || "פרטים:";
-    if (input) {
-        input.placeholder = inputPlaceholders[agentId] || "";
-        input.value = ""; // clear
-    }
-    
-    // Load template chips
-    const chipGrid = document.getElementById('templateGrid');
-    if (chipGrid) {
-        chipGrid.innerHTML = '';
-        agentTemplates[agentId].forEach((tpl, idx) => {
-            const chip = document.createElement('div');
-            chip.className = `template-chip ${idx === 0 ? 'active' : ''}`;
-            chip.innerText = tpl.title;
-            chip.onclick = () => {
-                document.querySelectorAll('.template-chip').forEach(el => el.classList.remove('active'));
-                chip.classList.add('active');
-                selectedTemplateIndex = idx;
-                
-                // Show calendar button if coach's weekly schedule is selected
-                if (calendarBtn) {
-                    calendarBtn.style.display = (agentId === 'coach' && idx === 0) ? 'inline-block' : 'none';
-                }
-                
-                generateAgentContent(); // auto regenerate
-            };
-            chipGrid.appendChild(chip);
-        });
-    }
-    
-    // Default show recommended image block for content generator and first template
-    const imgRec = document.getElementById('imageRecommendation');
-    if (imgRec) {
-        imgRec.style.display = agentId === 'content' ? 'block' : 'none';
-    }
-    
-    generateAgentContent();
-}
-
-function generateAgentContent() {
-    const inputVal = document.getElementById('inputDetails').value.trim();
-    const tpl = agentTemplates[currentAgent][selectedTemplateIndex];
-    let outputText = tpl.text;
-    
-    if (currentAgent === 'strategist') {
-        if (selectedTemplateIndex === 0) {
-            const service = inputVal || "[שירות]";
-            outputText = outputText.replace(/\[פרטים\]/g, service);
-        } else if (selectedTemplateIndex === 1) {
-            // Live financial analysis
-            let totalIncome = 0;
-            let totalExpenses = 0;
-            appData.income.forEach(i => totalIncome += parseFloat(i.amount));
-            appData.expenses.forEach(e => totalExpenses += parseFloat(e.amount));
-            const netProfit = totalIncome - totalExpenses;
-            
-            // Handyman vs Locksmith income
-            let locksmithIncome = 0;
-            let handymanIncome = 0;
-            appData.income.forEach(i => {
-                if (i.category.includes("מנעולנות")) locksmithIncome += parseFloat(i.amount);
-                if (i.category.includes("הנדימן")) handymanIncome += parseFloat(i.amount);
-            });
-            
-            let advice = "אין מספיק נתונים פיננסיים רשומים במערכת לייצור דו\"ח חכם. רשום הכנסות והוצאות בטאב הפיננסי כדי לקבל ייעוץ פיננסי חי.";
-            if (appData.income.length > 0 || appData.expenses.length > 0) {
-                advice = `💰 *דו"ח ייעוץ ואופטימיזציה פיננסית חי לזכריה*
-תאריך ניתוח: ${new Date().toLocaleDateString('he-IL')}
-
-📊 *סיכום נתוני העסק:*
-* מחזור הכנסות כולל: ₪${totalIncome.toLocaleString()}
-* הוצאות והשקעה בעסק: ₪${totalExpenses.toLocaleString()}
-* רווח נקי מצטבר: ₪${netProfit.toLocaleString()}
-
-📈 *ניתוח רווחיות לפי מחלקות:*
-* הכנסות ממנעולנות: ₪${locksmithIncome.toLocaleString()}
-* הכנסות מהנדימן והתקנות: ₪${handymanIncome.toLocaleString()}
-
-💡 *המלצות אסטרטגיות לייעול:*
-`;
-                if (locksmithIncome >= handymanIncome && locksmithIncome > 0) {
-                    advice += `* מנעולנות היא הקטגוריה המכניסה ביותר שלך כרגע. מומלץ להקצות לפחות 70% מזמנך ומהשיווק שלך לקידום שירותי מנעולנות דחופים בירוחם (החלפת צילינדרים, מנגנוני נעילה).
-* שים לב שהוצאות העסק שלך (כגון מברגות או קורסים) יכוסו מהר יותר ככל שתתמקד בצילינדרים בעלי שולי רווח גבוהים.`;
-                } else if (handymanIncome > locksmithIncome) {
-                    advice += `* עבודות הנדימן והרכבות מהוות את רוב ההכנסות שלך כעת. זהו בסיס מצוין לבניית מוניטין ויחסים אישיים עם תושבי ירוחם.
-* מומלץ להציע 'בדיקת תקינות דלת חינם' בכל ביקור הנדימן כדי למכור גם שירותי מנעולנות (Upsell) ולהגדיל את הממוצע ללקוח.`;
-                } else {
-                    advice += `* מומלץ להקפיד על רישום של לפחות 5 עסקאות נוספות החודש כדי לזהות מגמות רווחיות ברורות.`;
-                }
-            }
-            outputText = advice;
-        }
-    } 
-    else if (currentAgent === 'cmo') {
-        const campaign = inputVal || "[קמפיין]";
-        outputText = outputText.replace(/\[פרטים\]/g, campaign);
-    } 
-    else if (currentAgent === 'content') {
-        if (selectedTemplateIndex === 0) {
-            // Dynamic Tone copy
-            const tone = document.getElementById('postTone').value;
-            const phone = inputVal || "[הכנס טלפון]";
-            
-            const toneTexts = {
-                community: `🔑🚪 *שכנים בירוחם, מתי לאחרונה בדקתם את הדלת שלכם?*\n\nכתושב המקום, חשוב לי שהבית שלכם יהיה מוגן ובטוח. אם הדלת נגררת, המפתח מסתובב קשה, או שסתם עברתם דירה ורוצים להחליף צילינדר – אני כאן בשבילכם, ממש ליד הבית.\n\n*זכריה - פתרונות ושירותים לבית* מגיע אליכם עם חיוך, שירות מהיר, בלי דמי נסיעה מופקעים, ועבודה נקייה מכל הלב.\n\n📞 דברו איתי להתייעצות או תיאום: ${phone}`,
-                
-                professional: `🔑 *זכריה - פתרונות ושירותים לבית: שירותי מנעולנות והתקנות מורשים*\n\nאנו מעניקים פתרונות נעילה ותחזוקה מתקדמים לבתים ועסקים בירוחם והסביבה:\n* החלפת צילינדרים איכותיים (רב-בריח, מולטילוק ועוד) באריזה מקורית.\n* כיוון ותיקון דלתות כניסה ופנים, מנגנוני נעילה וידיות.\n* התקנות ותלייה (טלוויזיות, רהיטים ומדפים) בדיוק מקצועי.\n\nכל העבודות מבוצעות ברישיון ובאחריות מלאה, עם כיסוי ביטוחי מקצועי מלא.\n\n📞 לתיאום והצעות מחיר מסודרות: ${phone}`,
-                
-                selling: `⚡ *צריכים מנעולן או הנדימן בירוחם עכשיו? זכריה בדרך!* ⚡\n\nלמה להזמין מישהו מבחוץ ולשלם יותר? \n* החלפת צילינדר מהירה ומקצועית באחריות מלאה!\n* תליית טלוויזיה או מדף בצורה ישרה ונקייה!\n* תיקון דלתות ורהיטים במקום!\n\nהגעה מהירה, שירות אמין ומחירים הוגנים ושקופים מראש לתושבי ירוחם והסביבה.\n\n📞 התקשרו או שלחו הודעה בוואטסאפ: ${phone}`
-            };
-            outputText = toneTexts[tone] || "";
-            
-            // Set dynamic ad image based on selected tone context
-            const adImage = document.getElementById('recommendedAdImage');
-            const adImageDesc = document.getElementById('recommendedAdImageDesc');
-            if (adImage && adImageDesc) {
-                // If locksmithing is implied
-                if (tone === 'community' || tone === 'selling') {
-                    adImage.src = 'ad_locksmith.png';
-                    adImageDesc.innerText = `קובץ התמונה שמור בתיקיית העסק שלך תחת השם: ad_locksmith.png`;
-                } else {
-                    adImage.src = 'ad_general_repairs.png';
-                    adImageDesc.innerText = `קובץ התמונה שמור בתיקיית העסק שלך תחת השם: ad_general_repairs.png`;
-                }
-            }
-        } else {
-            const phone = inputVal || "[הכנס טלפון]";
-            outputText = outputText.replace(/\[טלפון\]/g, phone);
-        }
-    } 
-    else if (currentAgent === 'rnd') {
-        const challenge = inputVal || "[אתגר/בעיה]";
-        outputText = outputText.replace(/\[פרטים\]/g, challenge);
-    } 
-    else if (currentAgent === 'coach') {
-        const task = inputVal || "[משימה]";
-        outputText = outputText.replace(/\[פרטים\]/g, task);
-    }
-    
-    document.getElementById('outputBox').value = outputText;
-}
-
-// Cooperative Multi-Agent Workflow Engine
-let workflowSteps = [];
-let currentWorkflowStepIndex = 0;
-let workflowInitiativeText = "";
-let workflowData = {};
-
-function startWorkflow() {
-    const initiative = document.getElementById('workflowInitiative').value.trim();
-    if (!initiative) {
-        alert("אנא הזן יוזמה עסקית בתיבת הטקסט!");
-        return;
-    }
-    
-    workflowInitiativeText = initiative;
-    const mode = document.getElementById('workflowMode').value;
-    
-    // Switch to agents tab if not active
-    switchTab('agents');
-    
-    // Show status area
-    document.getElementById('workflowStatusArea').style.display = 'block';
-    
-    // Reset indicators
-    const indicators = ['rnd', 'strat', 'cmo', 'content', 'coach'];
-    indicators.forEach(ind => {
-        const el = document.getElementById(`step_${ind}`);
-        if (el) el.className = 'flow-step-indicator';
-    });
-    
-    workflowSteps = ['rnd', 'strat', 'cmo', 'content', 'coach'];
-    currentWorkflowStepIndex = 0;
-    workflowData = {};
-    
-    if (mode === 'auto') {
-        document.getElementById('interactiveControls').style.display = 'none';
-        runAutoWorkflow();
-    } else {
-        document.getElementById('interactiveControls').style.display = 'flex';
-        runInteractiveWorkflowStep();
-    }
-}
-
-function updateProgressBar(percentage) {
-    const bar = document.getElementById('workflowProgressBar');
-    if (bar) bar.style.width = `${percentage}%`;
-}
-
-function executeStep(stepId, percentage) {
-    const el = document.getElementById(`step_${stepId}`);
-    if (el) el.className = 'flow-step-indicator completed';
-    updateProgressBar(percentage);
-    generateStepData(stepId);
-}
-
-function generateStepData(stepId) {
-    const init = workflowInitiativeText;
-    if (stepId === 'rnd') {
-        workflowData.rnd = `💡 *סוכן מחקר וחדשנות - 3 רעיונות יצירתיים עבור "${init}":*\n\n1. *הצעה מבדלת*: הצעת שדרוג בטיחות לדלת במחיר מוזל לכל לקוח שמזמין את העבודה הזו.\n2. *חבילת השקה*: מחיר חבילה אטרקטיבי מוגבל בזמן לתושבי ירוחם.\n3. *קידום מקומי*: קמפיין שיתוף פעולה עם מתווכים ומנהלי נכסים בעיר.`;
-    } else if (stepId === 'strat') {
-        workflowData.strat = `📊 *סוכן אסטרטגיה וניתוח - יעדים ומתחרים עבור "${init}":*\n\n* קהל היעד: תתושבי ירוחם ובעלי עסקים מקומיים.\n* ניתוח פער בשוק: מתחרים מבחוץ לוקחים מחיר כפול על הגעה. אנחנו נותנים מענה מקומי מהיר ללא עלות נסיעה.\n* אבני דרך: הגעה ל-5 לקוחות ראשונים בשבועיים הקרובים.`;
-    } else if (stepId === 'cmo') {
-        workflowData.cmo = `📢 *סוכן מנהל שיווק - תקציב וקמפיין עבור "${init}":*\n\n* ערוץ שיווק: קבוצות פייסבוק מקומיות וירוחם בוואטסאפ (0 ש"ח תקציב).\n* הגדרת קמפיין: קמפיין מודעות 'שירות מקומי, אמין וזול' - שימוש בתמונות המעוצבות החדשות.\n* מדד הצלחה: צבירת 5 המלצות חיוביות בשבוע הראשון.`;
-    } else if (stepId === 'content') {
-        workflowData.content = `✍️ *סוכן קריאייטיב ותוכן - פוסט שיווקי מוכן להפצה עבור "${init}":*\n\n🔑 *שכנים בירוחם, יש לנו פתרון קרוב לבית!*\n\nצריכים שירות מקצועי עבור "${init}"? במקום להמתין שעות לבעל מקצוע מבחוץ ולשלם כפול – זכריה איתכם כאן בירוחם! \nשירות אמין, עבודה סופר-נקייה, מחירים הוגנים ושקופים מראש ואחריות מלאה.\n\n📞 לייעוץ וקריאת שירות מהירה: [טלפון]`;
-    } else if (stepId === 'coach') {
-        workflowData.coach = `📅 *סוכן אופטימיזציה ואימון - לו"ז ביצוע שבועי עבור "${init}":*\n\n* חלון א': יום ראשון ב-09:00 (60 דקות) – פרסום פוסטים ומענה לפניות ברשת.\n* חלון ב': יום שלישי ב-10:00 (90 דקות) – רכישת מלאי והצטיידות לקראת הזמנות.\n* חלון ג': יום חמישי ב-20:00 (30 דקות) – עדכון פיננסי של ההכנסות/הוצאות בבוט.`;
-    }
-}
-
-function runAutoWorkflow() {
-    updateProgressBar(0);
-    setTimeout(() => executeStep('rnd', 20), 300);
-    setTimeout(() => executeStep('strat', 40), 600);
-    setTimeout(() => executeStep('cmo', 60), 900);
-    setTimeout(() => executeStep('content', 80), 1200);
-    setTimeout(() => {
-        executeStep('coach', 100);
-        showFinalWorkflowOutput();
-    }, 1500);
-}
-
-function showFinalWorkflowOutput() {
-    const finalReport = `🏆 *תיק הוצאה לפועל עסקי מאוחד - זכריה פתרונות ושירותים לבית*
-שם היוזמה: ${workflowInitiativeText}
-
-=================================
-
-${workflowData.rnd}
-
-=================================
-
-${workflowData.strat}
-
-=================================
-
-${workflowData.cmo}
-
-=================================
-
-${workflowData.content}
-
-=================================
-
-${workflowData.coach}`;
-    
-    document.getElementById('outputBox').value = finalReport;
-    document.getElementById('workflowStepTitle').innerText = "השרשרת הושלמה בהצלחה! התיק העסקי מוכן להעתקה.";
-    
-    // Enable calendar button
-    const calendarBtn = document.getElementById('btnAddToCalendar');
-    if (calendarBtn) calendarBtn.style.display = 'inline-block';
-}
-
-function runInteractiveWorkflowStep() {
-    const stepId = workflowSteps[currentWorkflowStepIndex];
-    
-    // De-activate all and activate current
-    const indicators = ['rnd', 'strat', 'cmo', 'content', 'coach'];
-    indicators.forEach(ind => {
-        const el = document.getElementById(`step_${ind}`);
-        if (el && el.className.includes('active')) el.className = 'flow-step-indicator';
-    });
-    
-    const curEl = document.getElementById(`step_${stepId}`);
-    if (curEl) curEl.className = 'flow-step-indicator active';
-    
-    // Set step title
-    const stepNames = {
-        rnd: "1. סוכן מחקר וחדשנות - פיתוח רעיונות",
-        strat: "2. סוכן אסטרטגיה וניתוח - קביעת יעדים",
-        cmo: "3. סוכן מנהל שיווק - תקציב וערוצים",
-        content: "4. סוכן קריאייטיב ותוכן - כתיבת פוסט",
-        coach: "5. סוכן אופטימיזציה - לו\"ז ביצוע שבועי"
-    };
-    document.getElementById('workflowStepTitle').innerText = stepNames[stepId];
-    
-    // Generate step data
-    generateStepData(stepId);
-    
-    // Incorporate previous step data as context in outputBox text if applicable
-    let outputVal = workflowData[stepId];
-    if (stepId === 'strat' && workflowData.rnd) {
-        outputVal += `\n\n*(הערה: סוכן האסטרטגיה יבנה את היעדים על בסיס רעיונות ה-R&D מהשלב הקודם)*`;
-    }
-    
-    document.getElementById('outputBox').value = outputVal;
-    
-    // Update progress bar
-    const progress = (currentWorkflowStepIndex / workflowSteps.length) * 100;
-    updateProgressBar(progress);
-}
-
-function nextWorkflowStep() {
-    // Save current output box content (including any user edits)
-    const stepId = workflowSteps[currentWorkflowStepIndex];
-    workflowData[stepId] = document.getElementById('outputBox').value;
-    
-    const curEl = document.getElementById(`step_${stepId}`);
-    if (curEl) curEl.className = 'flow-step-indicator completed';
-    
-    currentWorkflowStepIndex++;
-    
-    if (currentWorkflowStepIndex < workflowSteps.length) {
-        runInteractiveWorkflowStep();
-    } else {
-        // Complete
-        updateProgressBar(100);
-        document.getElementById('interactiveControls').style.display = 'none';
-        showFinalWorkflowOutput();
-    }
-}
-
-// Add to Google Calendar Link Generator
-function addOutputToCalendar() {
-    const title = encodeURIComponent("שיווק שבועי וסנכרון - זכריה פתרונות ושירותים לבית");
-    const details = encodeURIComponent("זמן ממוקד לפרסום פוסטים שבועיים בקבוצות ירוחם ומעקב פניות.\nהופק על ידי סוכן הפרודוקטיביות בדאשבורד.");
-    
-    // Set date to next Sunday at 09:00 AM
-    const now = new Date();
-    const nextSunday = new Date();
-    nextSunday.setDate(now.getDate() + (7 - now.getDay()) % 7);
-    nextSunday.setHours(9, 0, 0, 0);
-    
-    const startStr = nextSunday.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-    const endSunday = new Date(nextSunday.getTime() + 60 * 60 * 1000); // 1 hour later
-    const endStr = endSunday.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-    
-    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&dates=${startStr}/${endStr}`;
-    window.open(url, '_blank');
-    showToast("יומן גוגל נפתח בלשונית חדשה! 📅");
-}
-
+// ==========================================
+// V2 Multi-Agent Router & CRM Logic
+// ==========================================
+
+// Routed agent visual container & askAgentSystem
+function askAgentSystem() {
+    const query = document.getElementById('agentQueryInput').value.trim();
+    if (!query) {
+        alert("אנא הזן שאלה או בקשה עבור מערכת הסוכנים!");
+        return;
+    }
+    
+    let routedAgent = 'strategist';
+    const text = query.toLowerCase();
+    
+    if (text.includes('רווח') || text.includes('הפסד') || text.includes('כסף') || text.includes('פיננס') || text.includes('רווחי') || text.includes('הכנס') || text.includes('הוצא')) {
+        routedAgent = 'strategist';
+    } else if (text.includes('שיווק') || text.includes('פרסום') || text.includes('קמפיין') || text.includes('קהל') || text.includes('פייסבוק') || text.includes('ערוץ')) {
+        routedAgent = 'cmo';
+    } else if (text.includes('תוכן') || text.includes('פוסט') || text.includes('כתיבה') || text.includes('ניסוח') || text.includes('טלפון') || text.includes('סטטוס')) {
+        routedAgent = 'content';
+    } else if (text.includes('רעיון') || text.includes('חדשנות') || text.includes('אתגר') || text.includes('בעיה') || text.includes('קושי') || text.includes('מוצר')) {
+        routedAgent = 'rnd';
+    } else if (text.includes('זמן') || text.includes('לו"ז') || text.includes('פומודורו') || text.includes('הרגל') || text.includes('יומן') || text.includes('לוח זמנים')) {
+        routedAgent = 'coach';
+    }
+    
+    const indicator = document.getElementById('routedAgentIndicator');
+    const agentNameEl = document.getElementById('activeAgentName');
+    if (indicator) indicator.style.display = 'flex';
+    
+    const agentNames = {
+        strategist: "האסטרטג הפיננסי (The Strategist)",
+        cmo: "מנהל השיווק הדיגיטלי (The CMO)",
+        content: "יוצר התוכן והקריאייטיב (The Content Creator)",
+        rnd: "סוכן המחקר והחדשנות (The R&D Agent)",
+        coach: "המאמן האישי והפרודוקטיביות (The Coach)"
+    };
+    
+    if (agentNameEl) agentNameEl.innerText = agentNames[routedAgent];
+    
+    const responseArea = document.getElementById('agentResponseArea');
+    if (responseArea) responseArea.style.display = 'block';
+    
+    let outputText = "";
+    let visualsHTML = "";
+    
+    let totalIncome = 0;
+    let totalExpenses = 0;
+    appData.income.forEach(i => totalIncome += parseFloat(i.amount));
+    appData.expenses.forEach(e => totalExpenses += parseFloat(e.amount));
+    const netProfit = totalIncome - totalExpenses;
+    
+    const leads = appData.leads || [];
+    const totalLeads = leads.length;
+    const closedLeads = leads.filter(l => l.closed === true).length;
+    const conversionRate = totalLeads > 0 ? Math.round((closedLeads / totalLeads) * 100) : 0;
+    
+    if (routedAgent === 'strategist') {
+        outputText = `📊 *ניתוח רווחיות קצר מהאסטרטג:*\n\n`;
+        outputText += `• מחזור הכנסות כולל: ₪${totalIncome.toLocaleString()}\n`;
+        outputText += `• הוצאות והשקעה בעסק: ₪${totalExpenses.toLocaleString()}\n`;
+        outputText += `• רווח נקי מצטבר: ₪${netProfit.toLocaleString()}\n\n`;
+        if (netProfit > 0) {
+            outputText += `💡 *תובנה*: העסק מרוויח ושומר על מאזן חיובי. מומלץ להקצות 15% מהרווחים לרכש ציוד או מלאי מנעולים.`;
+        } else {
+            outputText += `💡 *תובנה*: שים לב שההוצאות עולות על ההכנסות. מומלץ להציע 'בדיקת תקינות דלת חינם' בכל עבודת הנדימן להגדלת ההכנסה ממנעולנות.`;
+        }
+        
+        const incomePct = totalIncome > 0 ? 100 : 0;
+        const expensePct = totalIncome > 0 ? Math.round((totalExpenses / totalIncome) * 100) : 100;
+        const profitPct = totalIncome > 0 ? Math.max(0, Math.round((netProfit / totalIncome) * 100)) : 0;
+        
+        visualsHTML = `
+            <div class="infographic-wrapper">
+                <div class="cro-bar-item">
+                    <div class="cro-bar-header">
+                        <span>הכנסות (₪${totalIncome.toLocaleString()})</span>
+                        <span>100%</span>
+                    </div>
+                    <div class="cro-bar-track"><div class="cro-bar-fill success" style="width: ${incomePct}%"></div></div>
+                </div>
+                <div class="cro-bar-item">
+                    <div class="cro-bar-header">
+                        <span>הוצאות (₪${totalExpenses.toLocaleString()})</span>
+                        <span>${expensePct}%</span>
+                    </div>
+                    <div class="cro-bar-track"><div class="cro-bar-fill danger" style="width: ${Math.min(100, expensePct)}%"></div></div>
+                </div>
+                <div class="cro-bar-item">
+                    <div class="cro-bar-header">
+                        <span>רווח נקי (₪${netProfit.toLocaleString()})</span>
+                        <span>${profitPct}%</span>
+                    </div>
+                    <div class="cro-bar-track"><div class="cro-bar-fill primary" style="width: ${profitPct}%"></div></div>
+                </div>
+            </div>
+        `;
+    } 
+    else if (routedAgent === 'cmo') {
+        outputText = `📢 *תוכנית שיווק מהירה ממנהל השיווק:*\n\n`;
+        outputText += `• יחס המרת לקוחות נוכחי: ${conversionRate}%\n`;
+        outputText += `• ערוצי הגעה מומלצים לירוחם: קבוצות פייסבוק מקומיות וואטסאפ שכונתי.\n\n`;
+        outputText += `💡 *המלצה*: פרסם תמיד בין השעות 18:00 ל-20:00. השתמש בתמונה ad_locksmith.png לקידום שירות מנעולנות.`;
+        
+        visualsHTML = `
+            <div class="infographic-wrapper">
+                <h4 style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">חלוקת מאמץ שיווקי מומלץ:</h4>
+                <div class="cro-bar-item">
+                    <div class="cro-bar-header"><span>וואטסאפ (אורגני קבוצות)</span><span>50%</span></div>
+                    <div class="cro-bar-track"><div class="cro-bar-fill success" style="width: 50%"></div></div>
+                </div>
+                <div class="cro-bar-item">
+                    <div class="cro-bar-header"><span>פייסבוק ('ירוחם שלי')</span><span>30%</span></div>
+                    <div class="cro-bar-track"><div class="cro-bar-fill primary" style="width: 30%"></div></div>
+                </div>
+                <div class="cro-bar-item">
+                    <div class="cro-bar-header"><span>גוגל מפות (חירום)</span><span>20%</span></div>
+                    <div class="cro-bar-track"><div class="cro-bar-fill info" style="width: 20%"></div></div>
+                </div>
+            </div>
+        `;
+    }
+    else if (routedAgent === 'content') {
+        outputText = `✍️ *טיוטת פוסט שיווקי מוכן מיוצר התוכן:*\n\n`;
+        outputText += `🔑🚪 *תושבי ירוחם, צריכים מנעולן או הנדימן מקומי?*\n`;
+        outputText += `עבודה מהירה ומקצועית ללא דמי נסיעה מופקעים! החלפת צילינדרים, כיוון דלתות, ותליית מסכים בשיא הדיוק.\n\n`;
+        outputText += `📞 לייעוץ וקריאה מהירה: 050-1234567\n\n`;
+        outputText += `📷 תמונת מותג מומלצת: *ad_locksmith.png*`;
+        
+        visualsHTML = `
+            <div class="infographic-wrapper" style="text-align: center;">
+                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 5px;">תמונת מותג מומלצת לפרסום:</div>
+                <img src="ad_locksmith.png" alt="פוסטר מנעולנות" style="max-height: 140px; border-radius: 6px; border: 1px solid var(--primary); box-shadow: 0 0 10px var(--primary-glow); margin: 0 auto; display: block;">
+                <div style="font-size: 11px; color: var(--primary); margin-top: 5px; font-weight:700;">ad_locksmith.png</div>
+            </div>
+        `;
+    }
+    else if (routedAgent === 'rnd') {
+        outputText = `💡 *פתרונות ייעול וחדשנות מ-R&D:*\n\n`;
+        outputText += `1. *חבילת השקה*: 'הנדימן מפתח' - תליית טלוויזיה והרכבת ארון + בדיקת דלת חינם ב-₪450 בלבד.\n`;
+        outputText += `2. *אוטומציה*: הגדרת הודעה חוזרת בוואטסאפ ללקוחות יום לאחר התיקון לקבלת המלצה.\n\n`;
+        outputText += `💡 *מדד כדאיות*: פתרונות אלו בעלי עלות אפסית וישימות של 100%.`;
+        
+        visualsHTML = `
+            <div style="display: flex; gap: 10px; flex-direction: column; width: 100%;">
+                <div class="infographic-card">
+                    <div style="font-weight: 700; color: var(--success); font-size: 13px; margin-bottom: 3px;">כדאיות חבילות מוצרים:</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">הגדלת סל לקוח ממוצע ב-40% על ידי הצעות upsell בשטח.</div>
+                </div>
+                <div class="infographic-card">
+                    <div style="font-weight: 700; color: var(--primary); font-size: 13px; margin-bottom: 3px;">רמת קושי ליישום:</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">קלה מאוד - דורשת רק שינוי קל בהצגה מול הלקוח.</div>
+                </div>
+            </div>
+        `;
+    }
+    else if (routedAgent === 'coach') {
+        outputText = `📅 *תכנון זמנים שבועי מהמאמן האישי:*\n\n`;
+        outputText += `• יום ראשון 09:00 (שעה): פרסום פוסטים שבועיים.\n`;
+        outputText += `• יום שלישי 10:00 (שעה וחצי): בדיקת והשלמת מלאי צילינדרים.\n`;
+        outputText += `• יום חמישי 20:00 (חצי שעה): סנכרון הוצאות והכנסות דרך בוט הטלגרם.\n\n`;
+        outputText += `🧘 *הרגל*: בצע בדיקת כלי עבודה בכל בוקר (5 דקות בלבד).`;
+        
+        visualsHTML = `
+            <div class="infographic-wrapper">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px;">
+                    <span style="font-weight:700;"><i class="fa-solid fa-clock"></i> חלוקת שעות שבועית</span>
+                    <span style="color: var(--primary);">3.5 שעות</span>
+                </div>
+                <div style="display: flex; gap: 5px; justify-content: space-between; margin-top: 10px;">
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 10px; text-align: center; flex: 1;">
+                        <div style="font-size:12px; font-weight:700; color:var(--primary);">א' - שיווק</div>
+                        <div style="font-size:14px; font-weight:800; margin-top:5px;">60 דק'</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 10px; text-align: center; flex: 1;">
+                        <div style="font-size:12px; font-weight:700; color:var(--success);">ג' - מלאי</div>
+                        <div style="font-size:14px; font-weight:800; margin-top:5px;">90 דק'</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 10px; text-align: center; flex: 1;">
+                        <div style="font-size:12px; font-weight:700; color:hsl(35, 90%, 55%);">ה' - כספים</div>
+                        <div style="font-size:14px; font-weight:800; margin-top:5px;">30 דק'</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    document.getElementById('outputBox').value = outputText;
+    document.getElementById('agentVisualsContainer').innerHTML = visualsHTML;
+    
+    const calendarBtn = document.getElementById('btnAddToCalendar');
+    if (calendarBtn) {
+        calendarBtn.style.display = (routedAgent === 'coach') ? 'inline-block' : 'none';
+    }
+}
+
+// Google calendar linking helper
+function addOutputToCalendar() {
+    const title = encodeURIComponent("שיווק שבועי וסנכרון - זכריה פתרונות ושירותים לבית");
+    const details = encodeURIComponent("זמן ממוקד לפרסום פוסטים שבועיים בקבוצות ירוחם ומעקב פניות.\nהופק על ידי סוכן הפרודוקטיביות בדאשבורד.");
+    
+    const now = new Date();
+    const nextSunday = new Date();
+    nextSunday.setDate(now.getDate() + (7 - now.getDay()) % 7);
+    nextSunday.setHours(9, 0, 0, 0);
+    
+    const startStr = nextSunday.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+    const endSunday = new Date(nextSunday.getTime() + 60 * 60 * 1000); 
+    const endStr = endSunday.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+    
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&dates=${startStr}/${endStr}`;
+    window.open(url, '_blank');
+    showToast("יומן גוגל נפתח בלשונית חדשה! 📅");
+}
+
+// CRM Form Toggle Reason Field
+function toggleLeadReasonField() {
+    const closedVal = document.getElementById('leadClosed').value;
+    const reasonGroup = document.getElementById('leadReasonGroup');
+    if (reasonGroup) {
+        reasonGroup.style.display = (closedVal === 'no') ? 'block' : 'none';
+    }
+}
+
+// Add New Lead
+function addLead(e) {
+    e.preventDefault();
+    
+    const client = document.getElementById('leadClient').value;
+    const service = document.getElementById('leadService').value;
+    const source = document.getElementById('leadSource').value;
+    const closed = document.getElementById('leadClosed').value === 'yes';
+    const reason = closed ? "" : document.getElementById('leadReason').value;
+    
+    const newLead = {
+        id: Date.now(),
+        date: new Date().toISOString().split('T')[0],
+        client,
+        service,
+        source,
+        closed,
+        reason
+    };
+    
+    if (!appData.leads) appData.leads = [];
+    appData.leads.push(newLead);
+    
+    saveData();
+    renderCRM();
+    
+    // Reset Form
+    document.getElementById('leadClient').value = '';
+    document.getElementById('leadService').value = '';
+    document.getElementById('leadClosed').value = 'yes';
+    toggleLeadReasonField();
+    
+    showToast("הפנייה החדשה נשמרה בהצלחה! 👤");
+}
+
+// Delete Lead
+function deleteLead(id) {
+    if (confirm("האם אתה בטוח שברצונך למחוק פנייה זו מהמעקב?")) {
+        appData.leads = appData.leads.filter(l => l.id !== id);
+        saveData();
+        renderCRM();
+        showToast("הפנייה נמחקה. 🗑️");
+    }
+}
+
+// Render CRM Leads Table, Stats & CRO Analysis
+function renderCRM() {
+    const tableBody = document.getElementById('leadsTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '';
+    const leads = appData.leads || [];
+    
+    let totalCount = leads.length;
+    let closedCount = 0;
+    let lostCount = 0;
+    
+    const objections = {
+        "מחיר יקר": 0,
+        "זמן הגעה": 0,
+        "חוסר זמינות": 0,
+        "אחר": 0
+    };
+    const sources = {
+        "וואטסאפ": 0,
+        "פייסבוק": 0,
+        "גוגל מפות": 0,
+        "המלצה": 0,
+        "אחר": 0
+    };
+    
+    const sortedLeads = [...leads].sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    sortedLeads.forEach(l => {
+        if (l.closed) closedCount++;
+        else {
+            lostCount++;
+            if (objections[l.reason] !== undefined) objections[l.reason]++;
+            else objections["אחר"]++;
+        }
+        
+        if (sources[l.source] !== undefined) sources[l.source]++;
+        else sources["אחר"]++;
+        
+        const tr = document.createElement('tr');
+        const formattedDate = l.date.split('-').reverse().join('/');
+        
+        tr.innerHTML = `
+            <td>${formattedDate}</td>
+            <td style="font-weight: 600;">${l.client}</td>
+            <td>${l.service}</td>
+            <td><span class="badge badge-source">${l.source}</span></td>
+            <td>
+                <span class="badge ${l.closed ? 'badge-closed-yes' : 'badge-closed-no'}">
+                    ${l.closed ? '✔️ כן' : '❌ לא'}
+                </span>
+            </td>
+            <td style="color: var(--text-muted);">${l.closed ? '-' : (l.reason || 'לא צוין')}</td>
+            <td>
+                <button onclick="deleteLead(${l.id})" style="background:none; border:none; color:var(--text-muted); cursor:pointer;" title="מחק פנייה">
+                    <i class="fa-solid fa-trash-can" style="color: var(--danger)"></i>
+                </button>
+            </td>
+        `;
+        tableBody.appendChild(tr);
+    });
+    
+    document.getElementById('crmTotalLeads').innerText = totalCount;
+    document.getElementById('crmClosedLeads').innerText = closedCount;
+    document.getElementById('crmLostLeads').innerText = lostCount;
+    
+    const conversionRate = totalCount > 0 ? Math.round((closedCount / totalCount) * 100) : 0;
+    document.getElementById('crmConversionRate').innerText = `${conversionRate}%`;
+    
+    updateCROInsights(totalCount, closedCount, objections, sources);
+}
+
+// CRO Insights Engine
+function updateCROInsights(total, closed, objections, sources) {
+    const contentStratEl = document.getElementById('croContentStrategy');
+    const objectionStratEl = document.getElementById('croObjectionStrategy');
+    
+    if (!contentStratEl || !objectionStratEl) return;
+    
+    if (total === 0) {
+        contentStratEl.innerText = "הזן פניות בטבלה כדי שסוכן ה-CRO יוכל לייצר אסטרטגיות מבוססות נתונים.";
+        objectionStratEl.innerText = "הזן פניות בטבלה כדי שסוכן ה-CRO יוכל לנתח התנגדויות.";
+        return;
+    }
+    
+    let topSource = "וואטסאפ";
+    let maxSourceCount = -1;
+    for (const src in sources) {
+        if (sources[src] > maxSourceCount) {
+            maxSourceCount = sources[src];
+            topSource = src;
+        }
+    }
+    
+    let contentStrategyText = "";
+    if (topSource === "וואטסאפ") {
+        contentStrategyText = "💬 **וואטסאפ הוא ערוץ ההגעה המוביל**. תושבי ירוחם פונים אליך ישירות בהודעות. *פעולה*: מומלץ לפרסם פעם בשבוע בקבוצות השכונה, להשתמש בכותרות חמות וקהילתיות ולהציע מענה מהיר במיוחד.";
+    } else if (topSource === "פייסבוק") {
+        contentStrategyText = "👥 **פייסבוק הוא ערוץ ההגעה המוביל**. *פעולה*: המשך לפרסם פוסטים שיווקיים בקבוצות המקומיות כמו 'ירוחם שלי'. הקפד להעלות תמונות מותג ברורות (ad_locksmith.png) המציגות את השירות שלך.";
+    } else if (topSource === "גוגל מפות") {
+        contentStrategyText = "📍 **גוגל מפות מביא את מירב הפניות**. לקוחות מוצאים אותך בשעת חירום. *פעולה*: בקש מכל לקוח מרוצה לכתוב חוות דעת של 5 כוכבים בגוגל מיד בתום העבודה. דירוגים גבוהים ישפרו את המיקום שלך.";
+    } else if (topSource === "המלצה") {
+        contentStrategyText = "⭐ **חבר מביא חבר (פה לאוזן) הוא הכוח שלך**. *פעולה*: הצע ללקוחות קיימים הטבה קטנה או הנחה בעבודה הבאה אם הם ממליצים עליך לחברים ושכנים בירוחם.";
+    } else {
+        contentStrategyText = "🔍 **הפניות מגיעות ממגוון מקורות**. *פעולה*: כדאי להבליט את מספר הטלפון בפוסטים ולתלות פליירים מקומיים בירוחם להגברת המודעות.";
+    }
+    
+    contentStratEl.innerHTML = contentStrategyText;
+    
+    let topObjection = "מחיר יקר";
+    let maxObjCount = -1;
+    for (const obj in objections) {
+        if (objections[obj] > maxObjCount) {
+            maxObjCount = objections[obj];
+            topObjection = obj;
+        }
+    }
+    
+    let objectionStrategyText = "";
+    if (maxObjCount === 0) {
+        objectionStrategyText = "✔️ **כל הפניות נסגרו בהצלחה!** המשך באותו קו שירות מקצועי והוגן.";
+    } else if (topObjection === "מחיר יקר") {
+        objectionStrategyText = "💵 **התנגדות המחיר היא המכשול העיקרי**. *טיפול*: אל תתחרה רק במחיר. הדגש שאתה מנעולן מקומי שמגיע תוך 15 דקות ללא דמי נסיעה גבוהים (שמתחרים מבאר שבע גובים), ושהעבודה כוללת אחריות מלאה.";
+    } else if (topObjection === "זמן הגעה") {
+        objectionStrategyText = "🕒 **זמן הגעה ארוך מונע סגירות**. *טיפול*: לקוחות מנעולנות צריכים פתרון מיידי. כשפונים אליך, ציין מיד זמן הגעה מדויק ומהיר ('אצלך בתוך 15 דקות'), ופנה חלונות זמן בלו\"ז לחירום.";
+    } else if (topObjection === "חוסר זמינות") {
+        objectionStrategyText = "📴 **פניות מתפספסות בגלל חוסר זמינות**. *טיפול*: הגדר שעות עבודה ברורות והפעל מענה אוטומטי בוואטסאפ כשאתה לא זמין או לומד במכללה, כדי לקבוע למועד מאוחר יותר.";
+    } else {
+        objectionStrategyText = "❓ **סיבות אי-סגירה משתנות**. *טיפול*: הקפד לשאול שאלות מנחות לבירור הצורך המדויק של הלקוח, ותן הצעת מחיר שקופה מראש כדי למנוע אי-הבנות.";
+    }
+    
+    objectionStratEl.innerHTML = objectionStrategyText;
+    
+    const objChartContainer = document.getElementById('croObjectionChart');
+    if (objChartContainer) {
+        objChartContainer.innerHTML = '';
+        let totalObjections = 0;
+        for (const k in objections) totalObjections += objections[k];
+        
+        const colors = ["danger", "warning", "primary", "info"];
+        let idx = 0;
+        
+        for (const k in objections) {
+            const count = objections[k];
+            const pct = totalObjections > 0 ? Math.round((count / totalObjections) * 100) : 0;
+            const item = document.createElement('div');
+            item.className = 'cro-bar-item';
+            item.innerHTML = `
+                <div class="cro-bar-header"><span>${k}</span><span>${count} (${pct}%)</span></div>
+                <div class="cro-bar-track"><div class="cro-bar-fill ${colors[idx % colors.length]}" style="width: ${pct}%"></div></div>
+            `;
+            objChartContainer.appendChild(item);
+            idx++;
+        }
+    }
+    
+    const srcChartContainer = document.getElementById('croSourceChart');
+    if (srcChartContainer) {
+        srcChartContainer.innerHTML = '';
+        let totalSources = 0;
+        for (const k in sources) totalSources += sources[k];
+        
+        const colors = ["success", "primary", "info", "warning", "danger"];
+        let idx = 0;
+        
+        for (const k in sources) {
+            const count = sources[k];
+            const pct = totalSources > 0 ? Math.round((count / totalSources) * 100) : 0;
+            const item = document.createElement('div');
+            item.className = 'cro-bar-item';
+            item.innerHTML = `
+                <div class="cro-bar-header"><span>${k}</span><span>${count} (${pct}%)</span></div>
+                <div class="cro-bar-track"><div class="cro-bar-fill ${colors[idx % colors.length]}" style="width: ${pct}%"></div></div>
+            `;
+            srcChartContainer.appendChild(item);
+            idx++;
+        }
+    }
+}
+
 // Clipboard copy utility
 function copyToClipboard() {
     const outputBox = document.getElementById('outputBox');

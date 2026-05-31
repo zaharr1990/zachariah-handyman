@@ -577,3 +577,96 @@ tr:hover td {
     border-color: var(--success);
     color: var(--success);
 }
+
+/* V2 UI & CRM Styles */
+
+@keyframes pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 200, 255, 0.4); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(0, 200, 255, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 200, 255, 0); }
+}
+
+.routed-agent-badge {
+    animation: pulse 2.5s infinite;
+}
+
+.grid-4 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 24px;
+}
+
+/* Custom CSS/SVG Infographics and Charts styling */
+.cro-bar-item {
+    margin-bottom: 8px;
+}
+
+.cro-bar-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 3px;
+    color: var(--text-muted);
+}
+
+.cro-bar-track {
+    background: rgba(255, 255, 255, 0.05);
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    width: 100%;
+}
+
+.cro-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s cubic-bezier(0.1, 0.8, 0.2, 1);
+}
+
+.cro-bar-fill.primary { background: linear-gradient(90deg, var(--primary), var(--secondary)); }
+.cro-bar-fill.success { background: var(--success); }
+.cro-bar-fill.danger { background: var(--danger); }
+.cro-bar-fill.warning { background: hsl(35, 90%, 55%); }
+.cro-bar-fill.info { background: hsl(190, 80%, 60%); }
+
+/* CSS-based SVG bar chart or styled icons for infographics */
+.infographic-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 15px;
+}
+
+.infographic-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 8px;
+    padding: 15px;
+    transition: var(--transition);
+}
+
+.infographic-card:hover {
+    border-color: var(--primary-glow);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+/* CRM Table Badge overrides */
+.badge-closed-yes {
+    background: rgba(85, 255, 85, 0.15);
+    color: var(--success);
+    border: 1px solid rgba(85, 255, 85, 0.3);
+}
+
+.badge-closed-no {
+    background: rgba(255, 85, 85, 0.15);
+    color: var(--danger);
+    border: 1px solid rgba(255, 85, 85, 0.3);
+}
+
+.badge-source {
+    background: rgba(0, 200, 255, 0.1);
+    color: var(--primary);
+    border: 1px solid rgba(0, 200, 255, 0.25);
+}
+
