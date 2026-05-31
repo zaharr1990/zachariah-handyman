@@ -458,6 +458,122 @@ def handle_command(cmd_text, token, chat_id):
     else:
         send_message(token, chat_id, "❓ פקודה לא מוכרת. שלח `/help` כדי לראות את רשימת הפקודות הזמינות.")
 
+
+
+def send_weekday_recommendation(token, chat_id, weekday_idx):
+    from telegram_notifier import ad_images, GITHUB_PAGES_BASE
+    
+    sched = weekly_schedule[weekday_idx]
+    ad_text = ad_options[sched["ad_id"]]
+    photo_filename = ad_images[sched["ad_id"]]
+    photo_url = f"{GITHUB_PAGES_BASE}{photo_filename}?t={int(time.time())}"
+    
+    weekday_names = {6: "ראשון", 1: "שלישי", 3: "חמישי"}
+    day_name = weekday_names[weekday_idx]
+    
+    msg = f"""📢 *המלצת פרסום מוכנה ליום {day_name}*
+
+⏰ *שעת פרסום מומלצת:* **{sched['time']}**
+
+💡 *הרציונל השיווקי:*
+{sched['rationale']}
+
+---
+📝 *הפוסט מוכן להעתקה (העתק והדבק):*
+
+{ad_text}
+
+*(אל תשכח להוסיף את הטלפון שלך בסוף הפוסט!)*"""
+
+    if not send_photo(token, chat_id, photo_url, msg):
+        send_message(token, chat_id, msg)
+
+def handle_free_text(text, token, chat_id):
+    text_lower = text.lower()
+    
+    # 1. Weekday queries
+    if any(kw in text_lower for kw in ["ראשון", "sunday"]):
+        send_weekday_recommendation(token, chat_id, 6) # Sunday
+    elif any(kw in text_lower for kw in ["שלישי", "tuesday"]):
+        send_weekday_recommendation(token, chat_id, 1) # Tuesday
+    elif any(kw in text_lower for kw in ["חמישי", "thursday"]):
+        send_weekday_recommendation(token, chat_id, 3) # Thursday
+    elif any(kw in text_lower for kw in ["היום", "today"]):
+        today_wd = datetime.datetime.today().weekday()
+        if today_wd == 6:
+            send_weekday_recommendation(token, chat_id, 6)
+        elif today_wd == 1:
+            send_weekday_recommendation(token, chat_id, 1)
+        elif today_wd == 3:
+            send_weekday_recommendation(token, chat_id, 3)
+        else:
+            send_message(token, chat_id, """📅 *היום אין פרסום קבוע בלוח הזמנים העסקי שלך.*
+
+הפרסומים הקבועים הם:
+• *יום ראשון* ב-09:00: פוסט תיקונים והנדימן.
+• *יום שלישי* ב-18:00: פוסט מנעולנות.
+• *יום חמישי* ב-19:00: פוסט תליית טלוויזיות והרכבות.
+
+תוכל לבקש פוסט שיווקי מוכן בכל עת על ידי הפקודות: `/post 1`, `/post 2`, או `/post 3`.""")
+            
+    # 2. FAQ & Learning queries
+    elif any(kw in text_lower for kw in ["פייסבוק", "facebook", "פרסום", "איפה לפרסם", "קבוצות"]):
+        guide = """👥 *איך ואיפה הכי נכון לפרסם בירוחם?*
+
+כדי לקבל את מירב החשיפה ללא עלות:
+1. *קבוצות פייסבוק מקומיות* (הכי חזק):
+   • 'ירוחם שלי'
+   • 'ירוחם ביחד'
+   • 'לוח דרושים ועסקים ירוחם'
+2. *קבוצות וואטסאפ שכונתיות*:
+   • פרסם פעם בשבוע בקבוצות השכונה שלך ובקבוצת 'עסקים בירוחם'.
+3. *טיפ שיווקי*: פרסם תמיד בשעות הערב (18:00-21:00) או בבוקר מוקדם (08:00-09:30) כשאנשים פנויים בטלפון. אל תשכח להוסיף את התמונה ששלחתי לך ואת מספר הטלפון שלך!"""
+        send_message(token, chat_id, guide)
+        
+    elif any(kw in text_lower for kw in ["לקוח", "חוות דעת", "ביקורת", "המלצה", "שירות"]):
+        guide = """💬 *איך לבקש חוות דעת מלקוח בצורה נעימה?*
+
+חוות דעת חיוביות הן המנוע הכי חזק לעסק שלך בירוחם! בסיום כל עבודה:
+1. ודא שהלקוח מרוצה ב-100% והשטח נקי.
+2. שלח לו הודעה מנוסחת בוואטסאפ. תוכל ליצור אותה ברגע זה בבוט על ידי שליחת הפקודה: `/review [שם הלקוח] [סוג העבודה]`
+3. לדוגמה: `/review משה החלפת צילינדר` - הבוט יחזיר לך הודעה אישית מוכנה להעתקה ושליחה ללקוח!"""
+        send_message(token, chat_id, guide)
+        
+    elif any(kw in text_lower for kw in ["מחיר", "יקר", "התנגדות", "כמה עולה", "תמחור"]):
+        guide = """💵 *איך להתמודד עם לקוח שאומר שאתה יקר?*
+
+כמנעולן והנדימן מקצועי ומורשה, אל תיגרר למלחמת מחירים. כשלקוח אומר "יקר לי":
+1. *הדגש את המקומיות*: "אני תושב ירוחם, מגיע אליך תוך 15 דקות. אם יש בעיה מחר - יש לך למי לפנות ואני פה בשבילך מיד."
+2. *תעודה ואחריות*: "אני עובד ברישיון מנעולן ועם ביטוח מקצועי מלא. עבודה על דלת כניסה צריכה להיות בטוחה ב-100%."
+3. *השוואה למתחרים מבחוץ*: "בעל מקצוע מבאר שבע או דימונה יגבה ממך 200 ש\"ח רק על נסיעה, ובמקרה של תקלה לא יחזור לתקן. אצלי השירות כולל אחריות מלאה בבית שלך." """
+        send_message(token, chat_id, guide)
+        
+    elif any(kw in text_lower for kw in ["צילינדר", "מנעול", "דלת", "מנעולנות", "מפתח"]):
+        guide = """🔑 *טיפים מקצועיים למכירת שירותי מנעולנות (Upsell):*
+
+בכל פעם שאתה מגיע ללקוח לביצוע עבודת הנדימן (תליית טלוויזיה, הרכבת רהיט):
+1. *בדיקת דלת חינם*: הצעה מנצחת - "מכיוון שאני כבר כאן, אני עושה בדיקה מהירה חינם לדלת הכניסה שלך לוודא שהיא בטוחה ומכוונת."
+2. *הבחנה בבעיות*: אם המפתח מסתובב קשה, הצע לשמן או להחליף צילינדר במקום.
+3. *החלפת דירה*: שאל דיירים חדשים אם הם החליפו מפתח כשנכנסו. רובם לא חושבים על זה וישמחו להחליף צילינדר לשקט נפשי."""
+        send_message(token, chat_id, guide)
+
+    elif any(kw in text_lower for kw in ["היי", "שלום", "בוקר", "ערב", "תודה"]):
+        send_message(token, chat_id, "היי זכריה! שמח לשמוע ממך. 😊\n\nספר לי, איזה אתגר עסקי או שאלה יש לך היום? תוכל לשאול אותי על שיווק, תמחור, מנעולנות או לבקש לדעת מה לפרסם היום.")
+        
+    else:
+        # Default help options for free text
+        fallback = """❓ *היי זכריה, לא מצאתי תשובה מדויקת לשאלתך.*
+
+אך תוכל לשאול אותי שאלות חופשיות בנושאים הבאים:
+• 📅 *"מה מפרסמים היום?"* או *"מה מפרסמים ביום שלישי?"*
+• 👥 *"איך מפרסמים בפייסבוק ובוואטסאפ?"*
+• 💬 *"איך לבקש המלצה או חוות דעת מלקוח?"*
+• 💵 *"איך לענות ללקוח שטוען שהמחיר יקר?"*
+• 🔑 *"איך להציע שירותי מנעולנות בביקור הנדימן?"*
+
+לחלופין, שלח `/help` כדי לראות את כל פקודות הניהול המהירות של הסוכנים!"""
+        send_message(token, chat_id, fallback)
+
 def main():
     config = load_config()
     if not config:
@@ -498,7 +614,7 @@ def main():
                 elif text:
                     print(f"Received text: {text}")
                     # default command trigger
-                    handle_command('/help', token, chat_id)
+                    handle_free_text(text, token, chat_id)
                     
         time.sleep(2)
 
