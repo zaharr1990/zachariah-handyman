@@ -1,310 +1,333 @@
-// Default fallback data (in case data.json fetch fails or CORS blocks it)
-const initialData = {
-    expenses: [
-        { id: 1, date: "2026-05-15", category: "לימודים וקורסים", description: "קורס מנעולנות מעשי", amount: 2500 },
-        { id: 2, date: "2026-05-20", category: "ציוד וכלי עבודה", description: "מברגת אימפקט ומקדחים", amount: 850 }
-    ],
-    income: [],
-    tasks: [
-        { id: 1, text: "לסיים לימודי הנדסאי חשמל במכללה", completed: false, targetDate: "2026-10" },
-        { id: 2, text: "לרכוש צילינדרים לפלדלת ומנעולים ראשוניים למלאי", completed: false, targetDate: "2026-06" },
-        { id: 3, text: "לפרסם פוסט היכרות ראשון בקבוצות ירוחם בפייסבוק", completed: false, targetDate: "2026-06" },
+// Default fallback data (in case data.json fetch fails or CORS blocks it)
+const initialData = {
+    expenses: [
+        { id: 1, date: "2026-05-15", category: "לימודים וקורסים", description: "קורס מנעולנות מעשי", amount: 2500 },
+        { id: 2, date: "2026-05-20", category: "ציוד וכלי עבודה", description: "מברגת אימפקט ומקדחים", amount: 850 }
+    ],
+    income: [],
+    tasks: [
+        { id: 1, text: "לסיים לימודי הנדסאי חשמל במכללה", completed: false, targetDate: "2026-10" },
+        { id: 2, text: "לרכוש צילינדרים לפלדלת ומנעולים ראשוניים למלאי", completed: false, targetDate: "2026-06" },
+        { id: 3, text: "לפרסם פוסט היכרות ראשון בקבוצות ירוחם בפייסבוק", completed: false, targetDate: "2026-06" },
         { id: 4, text: "להגיע ל-10 לקוחות ראשונים במנעולנות והנדימן", completed: false, targetDate: "2026-06" }
     ]
 };
 
-let currentAgent = 'strategist';
-let selectedTemplateIndex = 0;
-
-// Templates definitions
-const agentTemplates = {
-    strategist: [
-        {
-            title: "📊 ניתוח מתחרים ממוקד",
-            text: "🔍 *ניתוח מתחרים וערוצי חדירה עבור: [פרטים]*\n\nעל בסיס המידע על השוק המקומי בירוחם והסביבה:\n\n1. *מתחרים מרחוק* (מבאר שבע/דימונה): גובים דמי נסיעה גבוהים (150-250 ש\"ח) וזמן הגעה ארוך (מעל שעה).\n2. *חובבנים מקומיים*: עובדים ללא רישיון, ללא ביטוח מקצועי, ורמת גימור נמוכה.\n\n*הפער העסקי וההזדמנות של זכריה:*\n✔️ *מקומי ומהיר*: הגעה תוך 15-20 דקות בתוך ירוחם.\n✔️ *מחיר הוגן*: ללא דמי נסיעה מופקעים מחוץ לעיר.\n✔️ *אחריות וביטוח*: עבודה מבוטחת ומורשית לחלוטין (משרה ביטחון בלקוחות).\n\n*המלצה אסטרטגית*: להבליט בכל פרסום את המקומיות ואת תעודת המקצועיות/ביטוח.",
-            placeholder: "השירות החדש או סוג העבודה (למשל: החלפת מנגנונים לדלת)"
-        },
-        {
-            title: "💰 ייעוץ אסטרטגי ופיננסי (חי)",
-            text: "", // Dynamic
-            placeholder: "לחץ על כפתור הייצור לניתוח נתוני האמת של העסק שלך"
-        }
-    ],
-    cmo: [
-        {
-            title: "📢 תוכנית שיווק דיגיטלית",
-            text: "📢 *תוכנית שיווק דיגיטלית לשירות: [פרטים]*\n\n*1. ערוצי הפצה מומלצים בירוחם:*\n* 💬 *קבוצות וואטסאפ שכונתיות*: הערוץ החזק ביותר בירוחם לחשיפה מיידית.\n* 👥 *קבוצות פייסבוק מקומיות* ('ירוחם שלי', 'ירוחם ביחד'): מיועד לחיפוש אורגני והמלצות.\n* 📍 *כרטיס גוגל לעסק (Google Maps)*: קריטי למנעולנות חירום (מציאת מנעולן בשעת צורך).\n\n*2. מסגרת תקציב שיווק מוצעת (0 ש\"ח פרסום ממומן בשלב ראשון):*\n* תקציב פייסבוק/וואטסאפ: 0 ש\"ח (שיווק אורגני קבוצתי).\n* כרטיס ביקור דיגיטלי / פליירים מקומיים: 150-200 ש\"ח הדפסה חד-פעמית.\n\n*3. תוכנית עבודה חודשית:*\n* שבוע 1-2: פתיחה ומיקום בגוגל מפות, רישום פוסטים אורגניים בקבוצות.\n* שבוע 3-4: שליחת הודעות חוות דעת ללקוחות קיימים וצבירת המלצות ברשת.",
-            placeholder: "השירות לקמפיין (למשל: תליית מסכי טלוויזיה)"
-        },
-        {
-            title: "🎯 תכנון קמפיין רשתות חברתיות",
-            text: "🎯 *תוכנית קמפיין ממוקד לרשתות: [פרטים]*\n\n* קהל יעד מרכזי: משפחות צעירות, שוכרי דירות ובעלי עסקים בירוחם.\n* מסר מרכזי: שירות מקומי, מהיר, אמין וללא דמי נסיעה מיותרים.\n* קריאייטיב מומלץ: תמונת מוצר (למשל ad_locksmith.png לפוסט מנעולן) יחד עם טקסט קצר ומחיר הוגן.\n* מדד הצלחה לקמפיין (KPI): השגת לפחות 3 פניות בשבוע ראשון.\n\n#ירוחם #מנעולן_בירוחם #הנדימן_בירוחם #שירות_מקומי #זכריה_פתרונות_לבית",
-            placeholder: "נושא הקמפיין (למשל: החלפת צילינדר מוגן פריצה)"
-        }
-    ],
-    content: [
-        {
-            title: "✍️ סדרת פוסטים שיווקיים (מותאם סגנון)",
-            text: "", // Dynamic based on Tone Selector
-            placeholder: "הזן מספר טלפון או פרט שירות"
-        },
-        {
-            title: "📖 מאמר מקצועי / פוסט סמכות לבלוג",
-            text: "📖 *מדריך בטיחות לבית: 3 סימנים שהגיע הזמן להחליף את הצילינדר בדלת* 🚪🔑\n\nרבים מאיתנו נוטים להזניח את דלת הכניסה שלנו, עד לרגע שבו היא פשוט מסרבת להיפתח. הנה 3 סימנים פשוטים שיעזרו לכם לזהות בעיות מראש ולמנוע מצב של נעילה מחוץ לבית:\n\n1. *המפתח מסתובב קשה או נתקע*: זהו הסימן הראשון לשחיקה של הפינים הפנימיים בצילינדר או חדירת חלודה ואבק.\n2. *החלפתם דיירים או עברתם דירה*: אתם לעולם לא יכולים לדעת כמה העתקים של המפתח מסתובבים אצל אנשים זרים. החלפת צילינדר מעניקה שקט נפשי מלא.\n3. *הדלת נגררת או זקוקה לטריקה חזקה*: שקיעה של הדלת שוחקת את המנעול ומפעילה עליו לחץ לא בריא.\n\n*זכריה - פתרונות ושירותים לבית* מציע בדיקת תקינות לדלתות והחלפת צילינדרים מקוריים באריזה סגורה במחירים שקופים מראש.\n\n📞 לייעוץ מקצועי ללא עלות: [טלפון]",
-            placeholder: "הכנס טלפון ליצירת CTA"
-        }
-    ],
-    rnd: [
-        {
-            title: "💡 סיעור מוחות ופתרונות יצירתיים",
-            text: "💡 *סיעור מוחות ופתרונות יצירתיים לבעיה: [פרטים]*\n\n1. *פתרון א': ייחודיות מבדלת* – הצעת 'שירות בדיקת תקינות דלת חינם' לכל לקוח שמזמין עבודת הנדימן (תליית טלוויזיה או הרכבה). זה יוצר ערך מוסף עצום ומייצר מכירות המשך (Upsell) של צילינדרים או כיוון דלתות.\n2. *פתרון ב': שיתוף פעולה מקומי* – יצירת קשר עם מתווכים ומנהלי נכסים בירוחם (המשכירים דירות לסטודנטים או למשפחות) והצעת שירות החלפת מנעול מהיר ומחיר מיוחד במעברי דירה.\n3. *פתרון ג': יצירת חבילות (Bundling)* – חבילת 'כניסה לבית חדש' הכוללת הרכבת 2 רהיטים, תליית טלוויזיה והחלפת צילינדר כניסה במחיר קבוצתי מוזל.\n\n*דירוג יישימות:* פתרון א' ו-ב' הם הקלים ביותר ליישום מיידי ללא עלויות.",
-            placeholder: "תאר את האתגר או הבעיה בעסק (למשל: קושי להגיע ללקוחות ראשונים)"
-        },
-        {
-            title: "⚙️ שיפור תהליכים ואוטומציה",
-            text: "⚙️ *ייעול תהליכים ואוטומציה עבור: [פרטים]*\n\nכדי לחסוך לך זמן יקר ולאפשר לך להתמקד בעבודה הפיזית:\n\n1. *אוטומציית איסוף חוות דעת*: הגדרת הודעה מתוזמנת אוטומטית בוואטסאפ 24 שעות לאחר סיום העבודה, המזמינה את הלקוח ללחוץ על קישור ולכתוב המלצה.\n2. *דיגיטציה של הצעות מחיר*: יצירת תבנית וואטסאפ מהירה מוכנה בבוט (כפי שבנינו) לשליחת הצעת מחיר מסודרת ומקצועית תוך 30 שניות בלבד משיחת הטלפון.\n3. *ניהול מלאי דיגיטלי*: שימוש בטאב המשימות בדאשבורד למעקב מלאי (צילינדרים, מנגנונים) כדי למנוע מצב שבו אתה מגיע לקריאת שירות ללא החלקים המתאימים.\n\n*תועלת צפויה:* חיסכון של כ-4 שעות שבועיות של עבודה משרדית.",
-            placeholder: "סוג התהליך לשיפור (למשל: איסוף המלצות מלקוחות)"
-        }
-    ],
-    coach: [
-        {
-            title: "📅 תכנון לו\"ז שבועי וחלונות ביצוע",
-            text: "📅 *לו\"ז עבודה ופרודוקטיביות מוצע עבור: [פרטים]*\n\nכדי להוציא את המשימות לפועל ביעילות ובשיטת פומודורו (25 דקות ריכוז, 5 דקות מנוחה):\n\n* 🕒 *חלון זמן א': שיווק ופרסום מקומי*\n  * מתי: יום ראשון הקרוב בשעה 09:00 (משך: 60 דקות - 2 מחזורי פומודורו).\n  * משימה: פרסום הפוסט השבועי בקבוצות ירוחם ומעקב פניות.\n\n* 🕒 *חלון זמן ב': רכש והצטיידות מלאי*\n  * מתי: יום שלישי בשעה 10:00 (משך: 90 דקות - 3 מחזורי פומודורו).\n  * משימה: השלמת רכש מנעולים, מברגים וצילינדרים לפלדלת למלאי העסקי.\n\n* 🕒 *חלון זמן ג': סקירה ועדכון פיננסי*\n  * מתי: יום חמישי בשעה 20:00 (משך: 30 דקות - מחזור פומודורו אחד).\n  * משימה: סנכרון הוצאות והכנסות באמצעות בוט הטלגרם וסקירת רווחיות.\n\n*(לחץ על הכפתור 'הוסף ליומן' כדי לשבץ את חלונות הזמן ישירות ביומן שלך!)*",
-            placeholder: "סוג המשימה לניהול זמן (למשל: הכנות שיווקיות ומלאי)"
-        },
-        {
-            title: "🧘 בניית הרגלים חיוביים ומעקב",
-            text: "🧘 *תוכנית הרגלים עסקית לזכריה: [פרטים]*\n\nכדי לייצר צמיחה יציבה ולמנוע דחיינות, מומלץ לאמץ את 3 ההרגלים הבאים:\n\n1. *הרגלי בוקר (ניהול מלאי)*: בדיקת תקינות של כלי העבודה ברכב וספירת הצילינדרים במלאי (5 דקות בכל בוקר).\n2. *הרגלי שטח (שימור לקוח)*: שליחת הודעת חוות דעת מנוסחת בוואטסאפ לכל לקוח שעבר טיפול (3 דקות בסיום כל עבודה).\n3. *הרגלי ערב (סגירה פיננסית)*: פתיחת הבוט בטלגרם ורישום של כל הוצאה או הכנסה שהיו באותו יום (2 דקות לפני השינה).\n\n*שיטת מעקב*: סמן ביומן פיזי או בדאשבורד V על כל יום שבו ההרגלים בוצעו בהצלחה. הצלחה נמדדת ברציפות!",
-            placeholder: "ההרגל שברצונך לחזק (למשל: רישום פיננסי או שימור לקוחות)"
-        }
-    ]
-};
-
-// Initialize Application
-window.addEventListener('DOMContentLoaded', () => {
-    // Set date input to today
-    const dateInput = document.getElementById('transDate');
-    if (dateInput) {
-        dateInput.value = new Date().toISOString().split('T')[0];
-    }
-    
-    // Load data
-    loadData();
-    selectAgent('marketing');
-});
-
-// Tab Switching
-function switchTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-    
-    document.getElementById(`${tabId}-tab`).classList.add('active');
-    
-    // Find button to active
-    const btnIndex = tabId === 'finance' ? 0 : tabId === 'agents' ? 1 : 2;
-    document.querySelectorAll('.tab-btn')[btnIndex].classList.add('active');
-}
-
-// Data management (Local Storage & JSON fetch)
-async function loadData() {
-    const localData = localStorage.getItem('zachariah_business_data');
-    if (localData) {
-        appData = JSON.parse(localData);
-    } else {
-        try {
-            const response = await fetch('data.json');
-            if (response.ok) {
-                const fetchedData = await response.json();
-                appData = { ...initialData, ...fetchedData };
-            }
-        } catch (e) {
-            console.log("Could not fetch data.json, using local initial template", e);
-        }
-        saveData();
-    }
-    renderFinance();
-    renderTasks();
-}
-
-function saveData() {
-    localStorage.setItem('zachariah_business_data', JSON.stringify(appData));
-}
-
-// Finance Section Logic
-function renderFinance() {
-    const tableBody = document.getElementById('transactionsTableBody');
-    if (!tableBody) return;
-    
-    tableBody.innerHTML = '';
-    
-    let totalIncomeSum = 0;
-    let totalExpensesSum = 0;
-    
-    // Combine transactions
-    const allTransactions = [];
-    
-    appData.income.forEach(item => {
-        allTransactions.push({ ...item, type: 'income' });
-        totalIncomeSum += parseFloat(item.amount);
-    });
-    
-    appData.expenses.forEach(item => {
-        allTransactions.push({ ...item, type: 'expense' });
-        totalExpensesSum += parseFloat(item.amount);
-    });
-    
-    // Sort transactions by date (newest first)
-    allTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-    
-    // Update stats cards
-    document.getElementById('totalIncome').innerText = `₪${totalIncomeSum.toLocaleString()}`;
-    document.getElementById('totalExpenses').innerText = `₪${totalExpensesSum.toLocaleString()}`;
-    
-    const balance = totalIncomeSum - totalExpensesSum;
-    const balanceElement = document.getElementById('netProfit');
-    balanceElement.innerText = `${balance >= 0 ? '+' : ''}₪${balance.toLocaleString()}`;
-    
-    if (balance > 0) {
-        balanceElement.className = 'stat-value balance income';
-    } else if (balance < 0) {
-        balanceElement.className = 'stat-value balance expense';
-    } else {
-        balanceElement.className = 'stat-value balance';
-    }
-    
-    // Render table rows
-    allTransactions.forEach(t => {
-        const tr = document.createElement('tr');
-        const formattedDate = t.date.split('-').reverse().join('/');
-        
-        tr.innerHTML = `
-            <td>${formattedDate}</td>
-            <td><span class="badge ${t.type === 'income' ? 'badge-income' : 'badge-expense'}">${t.category}</span></td>
-            <td>${t.description}</td>
-            <td style="font-weight:700; color: ${t.type === 'income' ? 'var(--success)' : 'var(--danger)'}">
-                ${t.type === 'income' ? '+' : '-'}₪${parseFloat(t.amount).toLocaleString()}
-            </td>
-            <td>
-                <button onclick="deleteTransaction(${t.id}, '${t.type}')" style="background:none; border:none; color:var(--text-muted); cursor:pointer;" title="מחק">
-                    <i class="fa-solid fa-trash-can" style="color: var(--danger)"></i>
-                </button>
-            </td>
-        `;
-        tableBody.appendChild(tr);
-    });
-}
-
-function addTransaction(e) {
-    e.preventDefault();
-    
-    const type = document.getElementById('transType').value;
-    const amount = parseFloat(document.getElementById('transAmount').value);
-    const category = document.getElementById('transCategory').value;
-    const description = document.getElementById('transDesc').value;
-    const date = document.getElementById('transDate').value;
-    
-    const newTransaction = {
-        id: Date.now(),
-        date,
-        category,
-        description,
-        amount
-    };
-    
-    if (type === 'income') {
-        appData.income.push(newTransaction);
-    } else {
-        appData.expenses.push(newTransaction);
-    }
-    
-    saveData();
-    renderFinance();
-    
-    // Reset form fields
-    document.getElementById('transAmount').value = '';
-    document.getElementById('transDesc').value = '';
-    
-    showToast("התנועה הפיננסית נשמרה בהצלחה! 💰");
-}
-
-function deleteTransaction(id, type) {
-    if (confirm("האם אתה בטוח שברצונך למחוק תנועה זו?")) {
-        if (type === 'income') {
-            appData.income = appData.income.filter(item => item.id !== id);
-        } else {
-            appData.expenses = appData.expenses.filter(item => item.id !== id);
-        }
-        saveData();
-        renderFinance();
-        showToast("התנועה נמחקה. 🗑️");
-    }
-}
-
-// Tasks Section Logic
-function renderTasks() {
-    const listContainer = document.getElementById('tasksList');
-    if (!listContainer) return;
-    
-    listContainer.innerHTML = '';
-    
-    // Sort tasks: uncompleted first, then by target date
-    const sortedTasks = [...appData.tasks].sort((a, b) => {
-        if (a.completed !== b.completed) {
-            return a.completed ? 1 : -1;
-        }
-        return a.targetDate.localeCompare(b.targetDate);
-    });
-    
-    sortedTasks.forEach(task => {
-        const div = document.createElement('div');
-        div.className = `task-item ${task.completed ? 'completed' : ''}`;
-        
-        div.innerHTML = `
-            <label class="task-checkbox-label">
-                <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${task.id})">
-                <span class="task-text">${task.text}</span>
-            </label>
-            <span class="task-date"><i class="fa-regular fa-calendar"></i> יעד: ${task.targetDate}</span>
-        `;
-        listContainer.appendChild(div);
-    });
-}
-
-function toggleTask(id) {
-    appData.tasks = appData.tasks.map(t => {
-        if (t.id === id) {
-            return { ...t, completed: !t.completed };
-        }
-        return t;
-    });
-    saveData();
-    renderTasks();
-    showToast("סטטוס המשימה עודכן! 🎯");
-}
-
-function addTask(e) {
-    e.preventDefault();
-    
-    const text = document.getElementById('taskText').value;
-    const targetDate = document.getElementById('taskDate').value;
-    
-    const newTask = {
-        id: Date.now(),
-        text,
-        completed: false,
-        targetDate
-    };
-    
-    appData.tasks.push(newTask);
-    saveData();
-    renderTasks();
-    
-    document.getElementById('taskText').value = '';
-    document.getElementById('taskDate').value = '';
-    
-    showToast("המשימה נוספה בהצלחה! 🚀");
-}
-
+let currentAgent = 'strategist';
+let selectedTemplateIndex = 0;
+
+// Templates definitions
+const agentTemplates = {
+    strategist: [
+        {
+            title: "📊 ניתוח מתחרים ממוקד",
+            text: "🔍 *ניתוח מתחרים וערוצי חדירה עבור: [פרטים]*\n\nעל בסיס המידע על השוק המקומי בירוחם והסביבה:\n\n1. *מתחרים מרחוק* (מבאר שבע/דימונה): גובים דמי נסיעה גבוהים (150-250 ש\"ח) וזמן הגעה ארוך (מעל שעה).\n2. *חובבנים מקומיים*: עובדים ללא רישיון, ללא ביטוח מקצועי, ורמת גימור נמוכה.\n\n*הפער העסקי וההזדמנות של זכריה:*\n✔️ *מקומי ומהיר*: הגעה תוך 15-20 דקות בתוך ירוחם.\n✔️ *מחיר הוגן*: ללא דמי נסיעה מופקעים מחוץ לעיר.\n✔️ *אחריות וביטוח*: עבודה מבוטחת ומורשית לחלוטין (משרה ביטחון בלקוחות).\n\n*המלצה אסטרטגית*: להבליט בכל פרסום את המקומיות ואת תעודת המקצועיות/ביטוח.",
+            placeholder: "השירות החדש או סוג העבודה (למשל: החלפת מנגנונים לדלת)"
+        },
+        {
+            title: "💰 ייעוץ אסטרטגי ופיננסי (חי)",
+            text: "", // Dynamic
+            placeholder: "לחץ על כפתור הייצור לניתוח נתוני האמת של העסק שלך"
+        }
+    ],
+    cmo: [
+        {
+            title: "📢 תוכנית שיווק דיגיטלית",
+            text: "📢 *תוכנית שיווק דיגיטלית לשירות: [פרטים]*\n\n*1. ערוצי הפצה מומלצים בירוחם:*\n* 💬 *קבוצות וואטסאפ שכונתיות*: הערוץ החזק ביותר בירוחם לחשיפה מיידית.\n* 👥 *קבוצות פייסבוק מקומיות* ('ירוחם שלי', 'ירוחם ביחד'): מיועד לחיפוש אורגני והמלצות.\n* 📍 *כרטיס גוגל לעסק (Google Maps)*: קריטי למנעולנות חירום (מציאת מנעולן בשעת צורך).\n\n*2. מסגרת תקציב שיווק מוצעת (0 ש\"ח פרסום ממומן בשלב ראשון):*\n* תקציב פייסבוק/וואטסאפ: 0 ש\"ח (שיווק אורגני קבוצתי).\n* כרטיס ביקור דיגיטלי / פליירים מקומיים: 150-200 ש\"ח הדפסה חד-פעמית.\n\n*3. תוכנית עבודה חודשית:*\n* שבוע 1-2: פתיחה ומיקום בגוגל מפות, רישום פוסטים אורגניים בקבוצות.\n* שבוע 3-4: שליחת הודעות חוות דעת ללקוחות קיימים וצבירת המלצות ברשת.",
+            placeholder: "השירות לקמפיין (למשל: תליית מסכי טלוויזיה)"
+        },
+        {
+            title: "🎯 תכנון קמפיין רשתות חברתיות",
+            text: "🎯 *תוכנית קמפיין ממוקד לרשתות: [פרטים]*\n\n* קהל יעד מרכזי: משפחות צעירות, שוכרי דירות ובעלי עסקים בירוחם.\n* מסר מרכזי: שירות מקומי, מהיר, אמין וללא דמי נסיעה מיותרים.\n* קריאייטיב מומלץ: תמונת מוצר (למשל ad_locksmith.png לפוסט מנעולן) יחד עם טקסט קצר ומחיר הוגן.\n* מדד הצלחה לקמפיין (KPI): השגת לפחות 3 פניות בשבוע ראשון.\n\n#ירוחם #מנעולן_בירוחם #הנדימן_בירוחם #שירות_מקומי #זכריה_פתרונות_לבית",
+            placeholder: "נושא הקמפיין (למשל: החלפת צילינדר מוגן פריצה)"
+        }
+    ],
+    content: [
+        {
+            title: "✍️ סדרת פוסטים שיווקיים (מותאם סגנון)",
+            text: "", // Dynamic based on Tone Selector
+            placeholder: "הזן מספר טלפון או פרט שירות"
+        },
+        {
+            title: "📖 מאמר מקצועי / פוסט סמכות לבלוג",
+            text: "📖 *מדריך בטיחות לבית: 3 סימנים שהגיע הזמן להחליף את הצילינדר בדלת* 🚪🔑\n\nרבים מאיתנו נוטים להזניח את דלת הכניסה שלנו, עד לרגע שבו היא פשוט מסרבת להיפתח. הנה 3 סימנים פשוטים שיעזרו לכם לזהות בעיות מראש ולמנוע מצב של נעילה מחוץ לבית:\n\n1. *המפתח מסתובב קשה או נתקע*: זהו הסימן הראשון לשחיקה של הפינים הפנימיים בצילינדר או חדירת חלודה ואבק.\n2. *החלפתם דיירים או עברתם דירה*: אתם לעולם לא יכולים לדעת כמה העתקים של המפתח מסתובבים אצל אנשים זרים. החלפת צילינדר מעניקה שקט נפשי מלא.\n3. *הדלת נגררת או זקוקה לטריקה חזקה*: שקיעה של הדלת שוחקת את המנעול ומפעילה עליו לחץ לא בריא.\n\n*זכריה - פתרונות ושירותים לבית* מציע בדיקת תקינות לדלתות והחלפת צילינדרים מקוריים באריזה סגורה במחירים שקופים מראש.\n\n📞 לייעוץ מקצועי ללא עלות: [טלפון]",
+            placeholder: "הכנס טלפון ליצירת CTA"
+        }
+    ],
+    rnd: [
+        {
+            title: "💡 סיעור מוחות ופתרונות יצירתיים",
+            text: "💡 *סיעור מוחות ופתרונות יצירתיים לבעיה: [פרטים]*\n\n1. *פתרון א': ייחודיות מבדלת* – הצעת 'שירות בדיקת תקינות דלת חינם' לכל לקוח שמזמין עבודת הנדימן (תליית טלוויזיה או הרכבה). זה יוצר ערך מוסף עצום ומייצר מכירות המשך (Upsell) של צילינדרים או כיוון דלתות.\n2. *פתרון ב': שיתוף פעולה מקומי* – יצירת קשר עם מתווכים ומנהלי נכסים בירוחם (המשכירים דירות לסטודנטים או למשפחות) והצעת שירות החלפת מנעול מהיר ומחיר מיוחד במעברי דירה.\n3. *פתרון ג': יצירת חבילות (Bundling)* – חבילת 'כניסה לבית חדש' הכוללת הרכבת 2 רהיטים, תליית טלוויזיה והחלפת צילינדר כניסה במחיר קבוצתי מוזל.\n\n*דירוג יישימות:* פתרון א' ו-ב' הם הקלים ביותר ליישום מיידי ללא עלויות.",
+            placeholder: "תאר את האתגר או הבעיה בעסק (למשל: קושי להגיע ללקוחות ראשונים)"
+        },
+        {
+            title: "⚙️ שיפור תהליכים ואוטומציה",
+            text: "⚙️ *ייעול תהליכים ואוטומציה עבור: [פרטים]*\n\nכדי לחסוך לך זמן יקר ולאפשר לך להתמקד בעבודה הפיזית:\n\n1. *אוטומציית איסוף חוות דעת*: הגדרת הודעה מתוזמנת אוטומטית בוואטסאפ 24 שעות לאחר סיום העבודה, המזמינה את הלקוח ללחוץ על קישור ולכתוב המלצה.\n2. *דיגיטציה של הצעות מחיר*: יצירת תבנית וואטסאפ מהירה מוכנה בבוט (כפי שבנינו) לשליחת הצעת מחיר מסודרת ומקצועית תוך 30 שניות בלבד משיחת הטלפון.\n3. *ניהול מלאי דיגיטלי*: שימוש בטאב המשימות בדאשבורד למעקב מלאי (צילינדרים, מנגנונים) כדי למנוע מצב שבו אתה מגיע לקריאת שירות ללא החלקים המתאימים.\n\n*תועלת צפויה:* חיסכון של כ-4 שעות שבועיות של עבודה משרדית.",
+            placeholder: "סוג התהליך לשיפור (למשל: איסוף המלצות מלקוחות)"
+        }
+    ],
+    coach: [
+        {
+            title: "📅 תכנון לו\"ז שבועי וחלונות ביצוע",
+            text: "📅 *לו\"ז עבודה ופרודוקטיביות מוצע עבור: [פרטים]*\n\nכדי להוציא את המשימות לפועל ביעילות ובשיטת פומודורו (25 דקות ריכוז, 5 דקות מנוחה):\n\n* 🕒 *חלון זמן א': שיווק ופרסום מקומי*\n  * מתי: יום ראשון הקרוב בשעה 09:00 (משך: 60 דקות - 2 מחזורי פומודורו).\n  * משימה: פרסום הפוסט השבועי בקבוצות ירוחם ומעקב פניות.\n\n* 🕒 *חלון זמן ב': רכש והצטיידות מלאי*\n  * מתי: יום שלישי בשעה 10:00 (משך: 90 דקות - 3 מחזורי פומודורו).\n  * משימה: השלמת רכש מנעולים, מברגים וצילינדרים לפלדלת למלאי העסקי.\n\n* 🕒 *חלון זמן ג': סקירה ועדכון פיננסי*\n  * מתי: יום חמישי בשעה 20:00 (משך: 30 דקות - מחזור פומודורו אחד).\n  * משימה: סנכרון הוצאות והכנסות באמצעות בוט הטלגרם וסקירת רווחיות.\n\n*(לחץ על הכפתור 'הוסף ליומן' כדי לשבץ את חלונות הזמן ישירות ביומן שלך!)*",
+            placeholder: "סוג המשימה לניהול זמן (למשל: הכנות שיווקיות ומלאי)"
+        },
+        {
+            title: "🧘 בניית הרגלים חיוביים ומעקב",
+            text: "🧘 *תוכנית הרגלים עסקית לזכריה: [פרטים]*\n\nכדי לייצר צמיחה יציבה ולמנוע דחיינות, מומלץ לאמץ את 3 ההרגלים הבאים:\n\n1. *הרגלי בוקר (ניהול מלאי)*: בדיקת תקינות של כלי העבודה ברכב וספירת הצילינדרים במלאי (5 דקות בכל בוקר).\n2. *הרגלי שטח (שימור לקוח)*: שליחת הודעת חוות דעת מנוסחת בוואטסאפ לכל לקוח שעבר טיפול (3 דקות בסיום כל עבודה).\n3. *הרגלי ערב (סגירה פיננסית)*: פתיחת הבוט בטלגרם ורישום של כל הוצאה או הכנסה שהיו באותו יום (2 דקות לפני השינה).\n\n*שיטת מעקב*: סמן ביומן פיזי או בדאשבורד V על כל יום שבו ההרגלים בוצעו בהצלחה. הצלחה נמדדת ברציפות!",
+            placeholder: "ההרגל שברצונך לחזק (למשל: רישום פיננסי או שימור לקוחות)"
+        }
+    ]
+};
+
+// Initialize Application
+window.addEventListener('DOMContentLoaded', () => {
+    // Set date input to today
+    const dateInput = document.getElementById('transDate');
+    if (dateInput) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+    
+    // Load data
+    loadData();
+});
+
+// Tab Switching
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    
+    document.getElementById(`${tabId}-tab`).classList.add('active');
+    
+    // Find button to active
+    const btnIndex = tabId === 'finance' ? 0 : tabId === 'agents' ? 1 : tabId === 'crm' ? 2 : 3;
+    if (document.querySelectorAll('.tab-btn')[btnIndex]) {
+        document.querySelectorAll('.tab-btn')[btnIndex].classList.add('active');
+    }
+    
+    // Render CRM if switched to CRM tab
+    if (tabId === 'crm') {
+        renderCRM();
+    }
+}
+
+// Data management (Local Storage & JSON fetch)
+async function loadData() {
+    const localData = localStorage.getItem('zachariah_business_data');
+    if (localData) {
+        appData = JSON.parse(localData);
+        // V2 Migration: If leads array is missing, fetch from data.json or initialize empty
+        if (!appData.leads) {
+            appData.leads = [];
+            try {
+                const response = await fetch('data.json');
+                if (response.ok) {
+                    const fetchedData = await response.json();
+                    if (fetchedData.leads) {
+                        appData.leads = fetchedData.leads;
+                    }
+                }
+            } catch (e) {
+                console.log("Could not fetch data.json during migration", e);
+            }
+            saveData();
+        }
+    } else {
+        try {
+            const response = await fetch('data.json');
+            if (response.ok) {
+                const fetchedData = await response.json();
+                appData = { ...initialData, ...fetchedData };
+            }
+        } catch (e) {
+            console.log("Could not fetch data.json, using local initial template", e);
+        }
+        saveData();
+    }
+    renderFinance();
+    renderTasks();
+    renderCRM();
+}
+
+function saveData() {
+    localStorage.setItem('zachariah_business_data', JSON.stringify(appData));
+}
+
+// Finance Section Logic
+function renderFinance() {
+    const tableBody = document.getElementById('transactionsTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '';
+    
+    let totalIncomeSum = 0;
+    let totalExpensesSum = 0;
+    
+    // Combine transactions
+    const allTransactions = [];
+    
+    appData.income.forEach(item => {
+        allTransactions.push({ ...item, type: 'income' });
+        totalIncomeSum += parseFloat(item.amount);
+    });
+    
+    appData.expenses.forEach(item => {
+        allTransactions.push({ ...item, type: 'expense' });
+        totalExpensesSum += parseFloat(item.amount);
+    });
+    
+    // Sort transactions by date (newest first)
+    allTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // Update stats cards
+    document.getElementById('totalIncome').innerText = `₪${totalIncomeSum.toLocaleString()}`;
+    document.getElementById('totalExpenses').innerText = `₪${totalExpensesSum.toLocaleString()}`;
+    
+    const balance = totalIncomeSum - totalExpensesSum;
+    const balanceElement = document.getElementById('netProfit');
+    balanceElement.innerText = `${balance >= 0 ? '+' : ''}₪${balance.toLocaleString()}`;
+    
+    if (balance > 0) {
+        balanceElement.className = 'stat-value balance income';
+    } else if (balance < 0) {
+        balanceElement.className = 'stat-value balance expense';
+    } else {
+        balanceElement.className = 'stat-value balance';
+    }
+    
+    // Render table rows
+    allTransactions.forEach(t => {
+        const tr = document.createElement('tr');
+        const formattedDate = t.date.split('-').reverse().join('/');
+        
+        tr.innerHTML = `
+            <td>${formattedDate}</td>
+            <td><span class="badge ${t.type === 'income' ? 'badge-income' : 'badge-expense'}">${t.category}</span></td>
+            <td>${t.description}</td>
+            <td style="font-weight:700; color: ${t.type === 'income' ? 'var(--success)' : 'var(--danger)'}">
+                ${t.type === 'income' ? '+' : '-'}₪${parseFloat(t.amount).toLocaleString()}
+            </td>
+            <td>
+                <button onclick="deleteTransaction(${t.id}, '${t.type}')" style="background:none; border:none; color:var(--text-muted); cursor:pointer;" title="מחק">
+                    <i class="fa-solid fa-trash-can" style="color: var(--danger)"></i>
+                </button>
+            </td>
+        `;
+        tableBody.appendChild(tr);
+    });
+}
+
+function addTransaction(e) {
+    e.preventDefault();
+    
+    const type = document.getElementById('transType').value;
+    const amount = parseFloat(document.getElementById('transAmount').value);
+    const category = document.getElementById('transCategory').value;
+    const description = document.getElementById('transDesc').value;
+    const date = document.getElementById('transDate').value;
+    
+    const newTransaction = {
+        id: Date.now(),
+        date,
+        category,
+        description,
+        amount
+    };
+    
+    if (type === 'income') {
+        appData.income.push(newTransaction);
+    } else {
+        appData.expenses.push(newTransaction);
+    }
+    
+    saveData();
+    renderFinance();
+    
+    // Reset form fields
+    document.getElementById('transAmount').value = '';
+    document.getElementById('transDesc').value = '';
+    
+    showToast("התנועה הפיננסית נשמרה בהצלחה! 💰");
+}
+
+function deleteTransaction(id, type) {
+    if (confirm("האם אתה בטוח שברצונך למחוק תנועה זו?")) {
+        if (type === 'income') {
+            appData.income = appData.income.filter(item => item.id !== id);
+        } else {
+            appData.expenses = appData.expenses.filter(item => item.id !== id);
+        }
+        saveData();
+        renderFinance();
+        showToast("התנועה נמחקה. 🗑️");
+    }
+}
+
+// Tasks Section Logic
+function renderTasks() {
+    const listContainer = document.getElementById('tasksList');
+    if (!listContainer) return;
+    
+    listContainer.innerHTML = '';
+    
+    // Sort tasks: uncompleted first, then by target date
+    const sortedTasks = [...appData.tasks].sort((a, b) => {
+        if (a.completed !== b.completed) {
+            return a.completed ? 1 : -1;
+        }
+        return a.targetDate.localeCompare(b.targetDate);
+    });
+    
+    sortedTasks.forEach(task => {
+        const div = document.createElement('div');
+        div.className = `task-item ${task.completed ? 'completed' : ''}`;
+        
+        div.innerHTML = `
+            <label class="task-checkbox-label">
+                <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${task.id})">
+                <span class="task-text">${task.text}</span>
+            </label>
+            <span class="task-date"><i class="fa-regular fa-calendar"></i> יעד: ${task.targetDate}</span>
+        `;
+        listContainer.appendChild(div);
+    });
+}
+
+function toggleTask(id) {
+    appData.tasks = appData.tasks.map(t => {
+        if (t.id === id) {
+            return { ...t, completed: !t.completed };
+        }
+        return t;
+    });
+    saveData();
+    renderTasks();
+    showToast("סטטוס המשימה עודכן! 🎯");
+}
+
+function addTask(e) {
+    e.preventDefault();
+    
+    const text = document.getElementById('taskText').value;
+    const targetDate = document.getElementById('taskDate').value;
+    
+    const newTask = {
+        id: Date.now(),
+        text,
+        completed: false,
+        targetDate
+    };
+    
+    appData.tasks.push(newTask);
+    saveData();
+    renderTasks();
+    
+    document.getElementById('taskText').value = '';
+    document.getElementById('taskDate').value = '';
+    
+    showToast("המשימה נוספה בהצלחה! 🚀");
+}
+
 // ==========================================
 // V2 Multi-Agent Router & CRM Logic
 // ==========================================
@@ -755,28 +778,28 @@ function updateCROInsights(total, closed, objections, sources) {
     }
 }
 
-// Clipboard copy utility
-function copyToClipboard() {
-    const outputBox = document.getElementById('outputBox');
-    outputBox.select();
-    outputBox.setSelectionRange(0, 99999); // for mobile devices
-    
-    navigator.clipboard.writeText(outputBox.value)
-        .then(() => {
-            showToast("הטקסט הועתק בהצלחה! 📋");
-        })
-        .catch(err => {
-            console.error('Failed to copy text: ', err);
-        });
-}
-
-// Toast Utility
-function showToast(message) {
-    const toast = document.getElementById('toast');
-    toast.innerText = message;
-    toast.classList.add('show');
-    
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
+// Clipboard copy utility
+function copyToClipboard() {
+    const outputBox = document.getElementById('outputBox');
+    outputBox.select();
+    outputBox.setSelectionRange(0, 99999); // for mobile devices
+    
+    navigator.clipboard.writeText(outputBox.value)
+        .then(() => {
+            showToast("הטקסט הועתק בהצלחה! 📋");
+        })
+        .catch(err => {
+            console.error('Failed to copy text: ', err);
+        });
+}
+
+// Toast Utility
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.innerText = message;
+    toast.classList.add('show');
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
 }
