@@ -264,7 +264,7 @@ function startPolling() {
         } catch (e) {
             console.error("Polling fetch error:", e);
         }
-    }, 30000);
+    }, 10000);
 }
 
 // Open modal for mobile QR login
