@@ -92,6 +92,12 @@ window.addEventListener('DOMContentLoaded', () => {
         dateInput.value = new Date().toISOString().split('T')[0];
     }
     
+    // Set lead date input to today
+    const leadDateInput = document.getElementById('leadDate');
+    if (leadDateInput) {
+        leadDateInput.value = new Date().toISOString().split('T')[0];
+    }
+    
     // Initial sync button style based on token presence
     const token = localStorage.getItem('zachariah_github_token');
     updateSyncButtonState(token ? 'success' : 'inactive');
@@ -576,6 +582,24 @@ function toggleLeadReasonField() {
     if (reasonGroup) {
         reasonGroup.style.display = (closedVal === 'no') ? 'block' : 'none';
     }
+    toggleLeadReasonOtherField();
+}
+
+function toggleLeadReasonOtherField() {
+    const closedVal = document.getElementById('leadClosed').value;
+    const reasonSelect = document.getElementById('leadReason');
+    const otherGroup = document.getElementById('leadReasonOtherGroup');
+    const otherInput = document.getElementById('leadReasonOther');
+    
+    if (otherGroup && reasonSelect && otherInput) {
+        if (closedVal === 'no' && reasonSelect.value === 'אחר') {
+            otherGroup.style.display = 'block';
+            otherInput.setAttribute('required', 'true');
+        } else {
+            otherGroup.style.display = 'none';
+            otherInput.removeAttribute('required');
+        }
+    }
 }
 
 // Add New Lead
@@ -583,14 +607,25 @@ function addLead(e) {
     e.preventDefault();
     
     const client = document.getElementById('leadClient').value;
+    const date = document.getElementById('leadDate').value;
     const service = document.getElementById('leadService').value;
     const source = document.getElementById('leadSource').value;
     const closed = document.getElementById('leadClosed').value === 'yes';
-    const reason = closed ? "" : document.getElementById('leadReason').value;
+    
+    let reason = "";
+    if (!closed) {
+        const reasonSelect = document.getElementById('leadReason').value;
+        if (reasonSelect === 'אחר') {
+            const reasonOther = document.getElementById('leadReasonOther').value.trim();
+            reason = "אחר: " + reasonOther;
+        } else {
+            reason = reasonSelect;
+        }
+    }
     
     const newLead = {
         id: Date.now(),
-        date: new Date().toISOString().split('T')[0],
+        date: date || new Date().toISOString().split('T')[0],
         client,
         service,
         source,
@@ -608,6 +643,15 @@ function addLead(e) {
     document.getElementById('leadClient').value = '';
     document.getElementById('leadService').value = '';
     document.getElementById('leadClosed').value = 'yes';
+    document.getElementById('leadReason').value = 'מחיר יקר';
+    document.getElementById('leadReasonOther').value = '';
+    
+    // Reset date input to today
+    const leadDateInput = document.getElementById('leadDate');
+    if (leadDateInput) {
+        leadDateInput.value = new Date().toISOString().split('T')[0];
+    }
+    
     toggleLeadReasonField();
     
     showToast("הפנייה החדשה נשמרה בהצלחה! 👤");

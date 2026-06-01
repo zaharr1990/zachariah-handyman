@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>זכריה - פתרונות ושירותים לבית</title>
-    <link rel="stylesheet" href="style.css?v=2.0.3">
+    <link rel="stylesheet" href="style.css?v=2.0.4">
     <!-- FontAwesome for beautiful icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -229,9 +229,15 @@
                             תיעוד פנייה חדשה (ליד)
                         </h2>
                         <form id="leadForm" onsubmit="addLead(event)">
-                            <div class="form-group">
-                                <label for="leadClient">שם הלקוח / פרטי פנייה</label>
-                                <input type="text" id="leadClient" placeholder="לדוגמה: ישראל ישראלי - ירוחם" required>
+                            <div class="grid-2" style="gap: 15px; display: grid; grid-template-columns: 2fr 1fr; margin-bottom: 0;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="leadClient">שם הלקוח / פרטי פנייה</label>
+                                    <input type="text" id="leadClient" placeholder="לדוגמה: ישראל ישראלי - ירוחם" required>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="leadDate">תאריך פנייה</label>
+                                    <input type="date" id="leadDate" required>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="leadService">סוג עבודה / שירות מבוקש</label>
@@ -259,12 +265,17 @@
                             <!-- Reason for not closing (hidden by default) -->
                             <div class="form-group" id="leadReasonGroup" style="display: none;">
                                 <label for="leadReason">סיבת אי-סגירה</label>
-                                <select id="leadReason">
+                                <select id="leadReason" onchange="toggleLeadReasonOtherField()">
                                     <option value="מחיר יקר">💵 מחיר יקר</option>
                                     <option value="זמן הגעה">🕒 זמן הגעה ארוך</option>
                                     <option value="חוסר זמינות">📴 חוסר זמינות שלי</option>
                                     <option value="אחר">❓ סיבה אחרת</option>
                                 </select>
+                            </div>
+                            <!-- Custom Reason description (hidden by default) -->
+                            <div class="form-group" id="leadReasonOtherGroup" style="display: none; margin-top: 10px;">
+                                <label for="leadReasonOther">פרט סיבה אחרת</label>
+                                <input type="text" id="leadReasonOther" placeholder="לדוגמה: מצא בעל מקצוע אחר / שינה את דעתו">
                             </div>
                             <button type="submit" class="btn">
                                 <i class="fa-solid fa-user-check"></i> שמור פנייה
@@ -422,6 +433,6 @@
     <!-- Toast Notification element -->
     <div class="toast" id="toast">הטקסט הועתק בהצלחה! 📋</div>
 
-    <script src="app.js?v=2.0.3"></script>
+    <script src="app.js?v=2.0.4"></script>
 </body>
 </html>
