@@ -13,6 +13,10 @@ const initialData = {
     ]
 };
 
+const GITHUB_REPO_OWNER = 'zaharr1990';
+const GITHUB_REPO_NAME = 'zachariah-handyman';
+const GITHUB_FILE_PATH = 'data.json';
+
 let currentAgent = 'strategist';
 let selectedTemplateIndex = 0;
 
@@ -88,6 +92,10 @@ window.addEventListener('DOMContentLoaded', () => {
         dateInput.value = new Date().toISOString().split('T')[0];
     }
     
+    // Initial sync button style based on token presence
+    const token = localStorage.getItem('zachariah_github_token');
+    updateSyncButtonState(token ? 'success' : 'inactive');
+    
     // Load data
     loadData();
 });
@@ -113,6 +121,16 @@ function switchTab(tabId) {
 
 // Data management (Local Storage & JSON fetch)
 async function loadData() {
+    const token = localStorage.getItem('zachariah_github_token');
+    if (token) {
+        updateSyncButtonState('syncing');
+        const pulled = await pullFromGitHub();
+        if (pulled) {
+            console.log("Successfully pulled database from cloud on startup.");
+            return;
+        }
+    }
+
     const localData = localStorage.getItem('zachariah_business_data');
     if (localData) {
         appData = JSON.parse(localData);
@@ -147,10 +165,17 @@ async function loadData() {
     renderFinance();
     renderTasks();
     renderCRM();
+    
+    if (token) {
+        updateSyncButtonState('success');
+    } else {
+        updateSyncButtonState('inactive');
+    }
 }
 
 function saveData() {
     localStorage.setItem('zachariah_business_data', JSON.stringify(appData));
+    pushToGitHub();
 }
 
 // Finance Section Logic
@@ -802,4 +827,228 @@ function showToast(message) {
     setTimeout(() => {
         toast.classList.remove('show');
     }, 3000);
+}
+
+// ==========================================
+// V2 Cloud Sync GitHub API Integration
+// ==========================================
+
+async function pullFromGitHub() {
+    const token = localStorage.getItem('zachariah_github_token');
+    if (!token) return false;
+    
+    updateSyncButtonState('syncing');
+    
+    try {
+        const url = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}`;
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'Cache-Control': 'no-cache'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            // Decode base64 content handling UTF-8 correctly
+            const decodedContent = decodeURIComponent(escape(atob(data.content)));
+            const gitData = JSON.parse(decodedContent);
+            
+            // Save current file sha for future pushes
+            localStorage.setItem('zachariah_github_file_sha', data.sha);
+            
+            // Update local memory and localStorage
+            appData = gitData;
+            localStorage.setItem('zachariah_business_data', JSON.stringify(appData));
+            
+            // Re-render all views
+            renderFinance();
+            renderTasks();
+            renderCRM();
+            
+            updateSyncButtonState('success');
+            return true;
+        } else {
+            console.error('Failed to pull from GitHub, status:', response.status);
+            updateSyncButtonState('error');
+            return false;
+        }
+    } catch (e) {
+        console.error('Error pulling from GitHub:', e);
+        updateSyncButtonState('error');
+        return false;
+    }
+}
+
+async function pushToGitHub() {
+    const token = localStorage.getItem('zachariah_github_token');
+    if (!token) return;
+    
+    updateSyncButtonState('syncing');
+    
+    try {
+        const url = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}`;
+        
+        // Get the latest SHA first to prevent out-of-sync overwrite merge conflicts
+        const getResponse = await fetch(url, {
+            headers: {
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'Cache-Control': 'no-cache'
+            }
+        });
+        
+        let currentSha = localStorage.getItem('zachariah_github_file_sha');
+        if (getResponse.ok) {
+            const getData = await getResponse.json();
+            currentSha = getData.sha;
+        }
+        
+        // Encode content to base64 safely (handling UTF-8 character escapes)
+        const jsonString = JSON.stringify(appData, null, 2);
+        const base64Content = btoa(unescape(encodeURIComponent(jsonString)));
+        
+        const putResponse = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/vnd.github.v3+json'
+            },
+            body: JSON.stringify({
+                message: "Update database from web dashboard",
+                content: base64Content,
+                sha: currentSha
+            })
+        });
+        
+        if (putResponse.ok) {
+            const putData = await putResponse.json();
+            localStorage.setItem('zachariah_github_file_sha', putData.content.sha);
+            updateSyncButtonState('success');
+            showToast("הנתונים נשמרו וסונכרנו לענן! ☁️");
+        } else {
+            console.error('Failed to push to GitHub, status:', putResponse.status);
+            updateSyncButtonState('error');
+            showToast("שגיאה בסנכרון לענן. ❌");
+        }
+    } catch (e) {
+        console.error('Error pushing to GitHub:', e);
+        updateSyncButtonState('error');
+        showToast("שגיאה בחיבור לענן. ❌");
+    }
+}
+
+// Sync modal UI actions
+function openSyncModal() {
+    const modal = document.getElementById('syncModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        
+        // Load stored token to display
+        const token = localStorage.getItem('zachariah_github_token');
+        const tokenInput = document.getElementById('githubTokenInput');
+        if (tokenInput) {
+            tokenInput.value = token || '';
+        }
+        
+        // Update status message
+        updateSyncModalStatus();
+    }
+}
+
+function closeSyncModal() {
+    const modal = document.getElementById('syncModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function updateSyncModalStatus() {
+    const token = localStorage.getItem('zachariah_github_token');
+    const msgEl = document.getElementById('syncStatusMessage');
+    if (!msgEl) return;
+    
+    if (token) {
+        msgEl.style.display = 'block';
+        msgEl.style.background = 'rgba(85, 255, 85, 0.1)';
+        msgEl.style.color = 'var(--success)';
+        msgEl.style.border = '1px solid rgba(85, 255, 85, 0.2)';
+        msgEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> סנכרון ענן פעיל ומחובר ל-GitHub.';
+    } else {
+        msgEl.style.display = 'block';
+        msgEl.style.background = 'rgba(255, 85, 85, 0.1)';
+        msgEl.style.color = 'var(--danger)';
+        msgEl.style.border = '1px solid rgba(255, 85, 85, 0.2)';
+        msgEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> סנכרון ענן אינו פעיל. המערכת שומרת נתונים באופן מקומי בלבד.';
+    }
+}
+
+async function saveSyncSettings() {
+    const tokenInput = document.getElementById('githubTokenInput');
+    if (!tokenInput) return;
+    
+    const token = tokenInput.value.trim();
+    if (!token) {
+        alert("אנא הזן GitHub Access Token תקין!");
+        return;
+    }
+    
+    localStorage.setItem('zachariah_github_token', token);
+    updateSyncModalStatus();
+    
+    // Attempt an immediate pull to verify connection
+    const success = await pullFromGitHub();
+    if (success) {
+        showToast("הסנכרון הופעל והתחבר בהצלחה! ☁️");
+        closeSyncModal();
+    } else {
+        alert("שגיאה בחיבור ל-GitHub. אנא ודא שהטוקן תקין ושיש לו הרשאות כתיבה לתיקייה.");
+        localStorage.removeItem('zachariah_github_token');
+        updateSyncModalStatus();
+    }
+}
+
+function clearSyncSettings() {
+    if (confirm("האם אתה בטוח שברצונך לנתק את סנכרון הענן? הנתונים יישארו רק במכשיר זה ולא יסונכרנו למכשירים אחרים.")) {
+        localStorage.removeItem('zachariah_github_token');
+        localStorage.removeItem('zachariah_github_file_sha');
+        updateSyncModalStatus();
+        updateSyncButtonState('inactive');
+        showToast("סנכרון הענן נותק. 🛑");
+        closeSyncModal();
+    }
+}
+
+function updateSyncButtonState(state) {
+    const btn = document.querySelector('.sync-settings-btn');
+    const icon = document.getElementById('syncIcon');
+    const text = document.getElementById('syncText');
+    if (!btn || !icon || !text) return;
+    
+    if (state === 'inactive') {
+        btn.style.borderColor = 'var(--border-color)';
+        icon.className = 'fa-solid fa-cloud';
+        icon.style.color = '#fff';
+        text.innerText = 'סנכרון ענן';
+    } else if (state === 'syncing') {
+        btn.style.borderColor = 'var(--primary)';
+        icon.className = 'fa-solid fa-cloud-arrow-up fa-bounce';
+        icon.style.color = 'var(--primary)';
+        text.innerText = 'מסתנכרן...';
+    } else if (state === 'success') {
+        btn.style.borderColor = 'var(--success)';
+        icon.className = 'fa-solid fa-cloud-arrow-down';
+        icon.style.color = 'var(--success)';
+        text.innerText = 'מסונכרן';
+        setTimeout(() => {
+            icon.className = 'fa-solid fa-cloud';
+        }, 1500);
+    } else if (state === 'error') {
+        btn.style.borderColor = 'var(--danger)';
+        icon.className = 'fa-solid fa-circle-exclamation';
+        icon.style.color = 'var(--danger)';
+        text.innerText = 'שגיאת סנכרון';
+    }
 }

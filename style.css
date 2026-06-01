@@ -670,3 +670,22 @@ tr:hover td {
     border: 1px solid rgba(0, 200, 255, 0.25);
 }
 
+/* Sync Button and Modal CSS (V2) */
+.sync-settings-btn:hover {
+    background: rgba(0, 200, 255, 0.15) !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 10px rgba(0, 200, 255, 0.2);
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+
