@@ -256,14 +256,9 @@ def handle_command(cmd_text, token, chat_id):
         raw_args = cmd_text[len('/lead'):].strip()
         if not raw_args:
             user_states[chat_id] = {"flow": "adding_lead", "step": 1, "data": {}}
-            reply_markup = {
-                "keyboard": [
-                    [{"text": "היום"}]
-                ],
-                "resize_keyboard": True,
-                "one_time_keyboard": True
-            }
-            send_message(token, chat_id, "👤 *התחלת רישום פנייה (ליד) חדשה*\n\n📅 *מה תאריך הפנייה?*\nהקלד תאריך בפורמט DD/MM/YYYY, או לחץ/הקלד **`היום`** כדי להשתמש בתאריך של היום:\n\n*(שלח 'ביטול' בכל שלב לעצירה)*", reply_markup=reply_markup)
+            today = datetime.date.today()
+            reply_markup = build_calendar_keyboard(today.year, today.month)
+            send_message(token, chat_id, "👤 *התחלת רישום פנייה (ליד) חדשה*\n\n📅 *בחר תאריך פנייה מהיומן:*", reply_markup=reply_markup)
             return
             
         if ',' in raw_args:
@@ -339,7 +334,7 @@ def handle_command(cmd_text, token, chat_id):
     # 3. ADD EXPENSE
     elif cmd == '/expense':
         if len(parts) < 3:
-            user_states[chat_id] = {"flow": "adding_expense", "step": 1, "data": {}}
+            user_states[chat_id] = {"flow": "adding_transaction", "step": 2, "data": {"type": "הוצאה"}}
             send_message(token, chat_id, "💸 *התחלת רישום הוצאה חדשה*\n\nמה סכום ההוצאה בשקלים? (שלח מספר, למשל: 150)\n\n*(שלח 'ביטול' בכל שלב לעצירה)*", reply_markup={"remove_keyboard": True})
             return
         try:
@@ -360,6 +355,8 @@ def handle_command(cmd_text, token, chat_id):
                 "description": desc,
                 "amount": amount
             }
+            if "expenses" not in data:
+                data["expenses"] = []
             data["expenses"].append(new_exp)
             if save_data(data):
                 send_message(token, chat_id, f"✅ *ההוצאה נרשמה בהצלחה!* \nסכום: ₪{amount} | תיאור: {desc}\n(הנתונים עלו לאתר שלך)")
@@ -371,7 +368,7 @@ def handle_command(cmd_text, token, chat_id):
     # 4. ADD INCOME
     elif cmd == '/income':
         if len(parts) < 3:
-            user_states[chat_id] = {"flow": "adding_income", "step": 1, "data": {}}
+            user_states[chat_id] = {"flow": "adding_transaction", "step": 2, "data": {"type": "הכנסה"}}
             send_message(token, chat_id, "💰 *התחלת רישום הכנסה חדשה*\n\nמה סכום ההכנסה בשקלים? (שלח מספר, למשל: 350)\n\n*(שלח 'ביטול' בכל שלב לעצירה)*", reply_markup={"remove_keyboard": True})
             return
         try:
@@ -390,6 +387,8 @@ def handle_command(cmd_text, token, chat_id):
                 "description": desc,
                 "amount": amount
             }
+            if "income" not in data:
+                data["income"] = []
             data["income"].append(new_inc)
             if save_data(data):
                 send_message(token, chat_id, f"✅ *ההכנסה נרשמה בהצלחה!* \nסכום: ₪{amount} | תיאור: {desc}\n(הנתונים עלו לאתר שלך)")
@@ -697,24 +696,42 @@ def handle_free_text(text, token, chat_id):
     text_clean = text_lower.strip()
     
     # Keyword triggers for interactive data entry
-    if text_clean in ["הכנסה", "הכנסה חדשה", "רישום הכנסה", "הכנסות"]:
-        user_states[chat_id] = {"flow": "adding_income", "step": 1, "data": {}}
-        send_message(token, chat_id, "💰 *התחלת רישום הכנסה חדשה*\n\nמה סכום ההכנסה בשקלים? (שלח מספר, למשל: 350)\n\n*(שלח 'ביטול' בכל שלב לעצירה)*", reply_markup={"remove_keyboard": True})
+    if text_clean in ["פיננסים", "פיננסים חדש", "כספים", "הכנסה", "הכנסה חדשה", "הוצאה", "הוצאה חדשה", "הכנסות", "הוצאות"]:
+        if "הכנסה" in text_clean:
+            user_states[chat_id] = {"flow": "adding_transaction", "step": 2, "data": {"type": "הכנסה"}}
+            send_message(token, chat_id, "💰 *התחלת רישום הכנסה חדשה*\n\nמה סכום ההכנסה בשקלים? (שלח מספר, למשל: 350)\n\n*(שלח 'ביטול' בכל שלב לעצירה)*", reply_markup={"remove_keyboard": True})
+        elif "הוצאה" in text_clean:
+            user_states[chat_id] = {"flow": "adding_transaction", "step": 2, "data": {"type": "הוצאה"}}
+            send_message(token, chat_id, "💸 *התחלת רישום הוצאה חדשה*\n\nמה סכום ההוצאה בשקלים? (שלח מספר, למשל: 150)\n\n*(שלח 'ביטול' בכל שלב לעצירה)*", reply_markup={"remove_keyboard": True})
+        else:
+            user_states[chat_id] = {"flow": "adding_transaction", "step": 1, "data": {}}
+            reply_markup = {
+                "keyboard": [
+                    [{"text": "הכנסה"}, {"text": "הוצאה"}]
+                ],
+                "resize_keyboard": True,
+                "one_time_keyboard": True
+            }
+            send_message(token, chat_id, "🚦 *בחר סוג תנועה פיננסית:*", reply_markup=reply_markup)
         return
-    elif text_clean in ["הוצאה", "הוצאה חדשה", "רישום הוצאה", "הוצאות"]:
-        user_states[chat_id] = {"flow": "adding_expense", "step": 1, "data": {}}
-        send_message(token, chat_id, "💸 *התחלת רישום הוצאה חדשה*\n\nמה סכום ההוצאה בשקלים? (שלח מספר, למשל: 150)\n\n*(שלח 'ביטול' בכל שלב לעצירה)*", reply_markup={"remove_keyboard": True})
-        return
-    elif text_clean in ["פנייה", "פנייה חדשה", "פניה", "פניה חדשה", "ליד", "ליד חדש", "רישום פנייה", "רישום פניה", "פניות"]:
-        user_states[chat_id] = {"flow": "adding_lead", "step": 1, "data": {}}
+
+    elif text_clean in ["משימה", "משימה חדשה", "משימות", "רישום משימה", "הסרת משימה"]:
+        user_states[chat_id] = {"flow": "managing_tasks", "step": 1, "data": {}}
         reply_markup = {
             "keyboard": [
-                [{"text": "היום"}]
+                [{"text": "הוספת משימה"}, {"text": "הסרת משימה"}]
             ],
             "resize_keyboard": True,
             "one_time_keyboard": True
         }
-        send_message(token, chat_id, "👤 *התחלת רישום פנייה (ליד) חדשה*\n\n📅 *מה תאריך הפנייה?*\nהקלד תאריך בפורמט DD/MM/YYYY, או לחץ/הקלד **`היום`** כדי להשתמש בתאריך של היום:\n\n*(שלח 'ביטול' בכל שלב לעצירה)*", reply_markup=reply_markup)
+        send_message(token, chat_id, "📋 *ניהול משימות ויעדים:*\nבחר האם להוסיף משימה חדשה או להסיר משימה קיימת:", reply_markup=reply_markup)
+        return
+
+    elif text_clean in ["פנייה", "פנייה חדשה", "פניה", "פניה חדשה", "ליד", "ליד חדש", "רישום פנייה", "רישום פניה", "פניות"]:
+        user_states[chat_id] = {"flow": "adding_lead", "step": 1, "data": {}}
+        today = datetime.date.today()
+        reply_markup = build_calendar_keyboard(today.year, today.month)
+        send_message(token, chat_id, "👤 *התחלת רישום פנייה (ליד) חדשה*\n\n📅 *בחר תאריך פנייה מהיומן:*", reply_markup=reply_markup)
         return
     
     # 1. Weekday queries
@@ -807,6 +824,220 @@ def handle_free_text(text, token, chat_id):
 # State machine for interactive flows
 user_states = {}
 
+# Hebrew calendar helpers for inline keyboard
+HEBREW_MONTHS = {
+    1: "ינואר", 2: "פברואר", 3: "מרץ", 4: "אפריל", 5: "מאי", 6: "יוני",
+    7: "יולי", 8: "אוגוסט", 9: "ספטמבר", 10: "אוקטובר", 11: "נובמבר", 12: "דצמבר"
+}
+
+def build_calendar_keyboard(year, month):
+    import calendar
+    month_name = HEBREW_MONTHS.get(month, "")
+    header_text = f"{month_name} {year}"
+    
+    keyboard = []
+    # Title
+    keyboard.append([{"text": header_text, "callback_data": "cal:ignore"}])
+    # Days of week (Hebr)
+    keyboard.append([{"text": d, "callback_data": "cal:ignore"} for d in ["א", "ב", "ג", "ד", "ה", "ו", "ש"]])
+    
+    # Weeks
+    cal_month = calendar.monthcalendar(year, month)
+    for week in cal_month:
+        row = []
+        for day in week:
+            if day == 0:
+                row.append({"text": " ", "callback_data": "cal:ignore"})
+            else:
+                date_str = f"{year:04d}-{month:02d}-{day:02d}"
+                row.append({"text": str(day), "callback_data": f"cal:day:{date_str}"})
+        keyboard.append(row)
+        
+    # Navigation
+    prev_month = month - 1 if month > 1 else 12
+    prev_year = year if month > 1 else year - 1
+    next_month = month + 1 if month < 12 else 1
+    next_year = year if month < 12 else year + 1
+    
+    keyboard.append([
+        {"text": "◀️ קודם", "callback_data": f"cal:nav:{prev_year}:{prev_month}"},
+        {"text": "📅 היום", "callback_data": "cal:today"},
+        {"text": "הבא ▶️", "callback_data": f"cal:nav:{next_year}:{next_month}"}
+    ])
+    
+    return {"inline_keyboard": keyboard}
+
+def edit_message_text(token, chat_id, message_id, text, reply_markup=None):
+    url = f"https://api.telegram.org/bot{token}/editMessageText"
+    payload = {
+        'chat_id': chat_id,
+        'message_id': message_id,
+        'text': text,
+        'parse_mode': 'Markdown'
+    }
+    if reply_markup:
+        payload['reply_markup'] = json.dumps(reply_markup)
+    data = urllib.parse.urlencode(payload).encode('utf-8')
+    req = urllib.request.Request(url, data=data)
+    try:
+        urllib.request.urlopen(req)
+    except Exception as e:
+        print("Error editing message text:", e)
+
+def edit_message_reply_markup(token, chat_id, message_id, reply_markup=None):
+    url = f"https://api.telegram.org/bot{token}/editMessageReplyMarkup"
+    payload = {
+        'chat_id': chat_id,
+        'message_id': message_id
+    }
+    if reply_markup:
+        payload['reply_markup'] = json.dumps(reply_markup)
+    else:
+        payload['reply_markup'] = json.dumps({"inline_keyboard": []})
+    data = urllib.parse.urlencode(payload).encode('utf-8')
+    req = urllib.request.Request(url, data=data)
+    try:
+        urllib.request.urlopen(req)
+    except Exception as e:
+        print("Error editing message reply markup:", e)
+
+def answer_callback_query(token, callback_query_id, text=None):
+    url = f"https://api.telegram.org/bot{token}/answerCallbackQuery"
+    payload = {
+        'callback_query_id': callback_query_id
+    }
+    if text:
+        payload['text'] = text
+    data = urllib.parse.urlencode(payload).encode('utf-8')
+    req = urllib.request.Request(url, data=data)
+    try:
+        urllib.request.urlopen(req)
+    except Exception as e:
+        print("Error answering callback query:", e)
+
+def process_selected_date(chat_id, selected_date, token):
+    state_info = user_states.get(chat_id)
+    if not state_info:
+        return
+        
+    flow = state_info["flow"]
+    step = state_info["step"]
+    data = state_info["data"]
+    
+    if flow == "adding_lead" and step == 1:
+        data["date"] = selected_date
+        state_info["step"] = 2
+        send_message(token, chat_id, "👤 *מה שם הלקוח הפונה?*")
+        
+    elif flow == "adding_task" and step == 22:
+        data["targetDate"] = selected_date
+        save_new_task(chat_id, data, token)
+        
+    elif flow == "adding_transaction" and step == 5:
+        data["date"] = selected_date
+        save_new_transaction(chat_id, data, token)
+
+def save_new_task(chat_id, data, token):
+    db = load_data()
+    if "tasks" not in db:
+        db["tasks"] = []
+    
+    new_task = {
+        "id": int(time.time()),
+        "text": data["text"],
+        "completed": False,
+        "targetDate": data["targetDate"]
+    }
+    db["tasks"].append(new_task)
+    
+    if chat_id in user_states:
+        del user_states[chat_id]
+        
+    if save_data(db):
+        send_message(token, chat_id, f"✅ *המשימה התווספה בהצלחה!* 📋\nמשימה: {new_task['text']}\nיעד: {new_task['targetDate']}\nהנתונים עודכנו ומסונכרנים עם האתר.", reply_markup={"remove_keyboard": True})
+    else:
+        send_message(token, chat_id, "❌ תקלה בשמירת המשימה במערכת.", reply_markup={"remove_keyboard": True})
+
+def save_new_transaction(chat_id, data, token):
+    db = load_data()
+    amount = data["amount"]
+    desc = data["description"]
+    cat = data["category"]
+    date_str = data["date"]
+    tx_type = data["type"]
+    
+    new_item = {
+        "id": int(time.time()),
+        "date": date_str,
+        "category": cat,
+        "description": desc,
+        "amount": amount
+    }
+    
+    if tx_type == "הכנסה":
+        if "income" not in db:
+            db["income"] = []
+        db["income"].append(new_item)
+        message_success = f"✅ *ההכנסה נרשמה בהצלחה!* 💰\nסכום: ₪{amount} | קטגוריה: {cat} | תאריך: {date_str}\nהנתונים עודכנו ומסונכרנים עם האתר."
+    else:
+        if "expenses" not in db:
+            db["expenses"] = []
+        db["expenses"].append(new_item)
+        message_success = f"✅ *ההוצאה נרשמה בהצלחה!* 💸\nסכום: ₪{amount} | קטגוריה: {cat} | תאריך: {date_str}\nהנתונים עודכנו ומסונכרנים עם האתר."
+        
+    if chat_id in user_states:
+        del user_states[chat_id]
+        
+    if save_data(db):
+        send_message(token, chat_id, message_success, reply_markup={"remove_keyboard": True})
+    else:
+        send_message(token, chat_id, "❌ תקלה בשמירת הנתונים במערכת.", reply_markup={"remove_keyboard": True})
+
+def handle_callback_query(callback, token):
+    callback_id = callback["id"]
+    sender_id = str(callback["from"]["id"])
+    config = load_config()
+    chat_id = str(config.get("telegram_chat_id"))
+    
+    if sender_id != chat_id:
+        answer_callback_query(token, callback_id, text="🚫 לא מורשה.")
+        return
+        
+    data_str = callback.get("data", "")
+    message = callback.get("message")
+    if not message:
+        answer_callback_query(token, callback_id)
+        return
+        
+    message_id = message["message_id"]
+    
+    if data_str.startswith("cal:"):
+        parts = data_str.split(":")
+        action = parts[1]
+        
+        if action == "ignore":
+            answer_callback_query(token, callback_id)
+            return
+            
+        elif action == "nav":
+            year = int(parts[2])
+            month = int(parts[3])
+            keyboard = build_calendar_keyboard(year, month)
+            edit_message_reply_markup(token, chat_id, message_id, reply_markup=keyboard)
+            answer_callback_query(token, callback_id)
+            
+        elif action == "today":
+            today = datetime.date.today().isoformat()
+            answer_callback_query(token, callback_id, text=f"בחרת היום: {today}")
+            edit_message_text(token, chat_id, message_id, f"📅 *תאריך שנבחר:* {today}")
+            process_selected_date(chat_id, today, token)
+            
+        elif action == "day":
+            selected_date = parts[2]
+            answer_callback_query(token, callback_id, text=f"בחרת: {selected_date}")
+            edit_message_text(token, chat_id, message_id, f"📅 *תאריך שנבחר:* {selected_date}")
+            process_selected_date(chat_id, selected_date, token)
+
 def parse_hebrew_date(date_str):
     date_str = date_str.strip()
     if date_str == 'היום' or date_str.lower() == 'today':
@@ -829,89 +1060,147 @@ def process_state_step(chat_id, text, token):
     step = state_info["step"]
     data = state_info["data"]
     
-    # --- ADD INCOME FLOW ---
-    if flow == "adding_income":
+    # --- ADD TRANSACTION FLOW ---
+    if flow == "adding_transaction":
         if step == 1:
+            tx_type = text.strip()
+            if tx_type not in ["הכנסה", "הוצאה"]:
+                send_message(token, chat_id, "❌ נא לבחור 'הכנסה' או 'הוצאה' מתוך הכפתורים:")
+                return
+            data["type"] = tx_type
+            state_info["step"] = 2
+            send_message(token, chat_id, "💰 *מה סכום התנועה בשקלים?* (שלח מספר, למשל: 250):", reply_markup={"remove_keyboard": True})
+        elif step == 2:
             try:
                 amount = float(text)
                 if amount <= 0:
                     send_message(token, chat_id, "❌ הסכום חייב להיות גדול מ-0. אנא שלח מספר תקין:")
                     return
                 data["amount"] = amount
-                state_info["step"] = 2
-                send_message(token, chat_id, "✍️ *מה תיאור ההכנסה?*\n(למשל: החלפת מנגנון, תליית מדף, פריצת דלת)")
+                state_info["step"] = 3
+                
+                # Categories
+                if data["type"] == "הכנסה":
+                    categories = [["הכנסה מנעולנות", "הכנסה הנדימן"], ["אחר"]]
+                else:
+                    categories = [
+                        ["ציוד כלי עבודה", "לימודים+קורסים"],
+                        ["מלאי הזמנות", "נסיעות דלק"],
+                        ["שיווק פרסום", "אחר"]
+                    ]
+                reply_markup = {
+                    "keyboard": categories,
+                    "resize_keyboard": True,
+                    "one_time_keyboard": True
+                }
+                send_message(token, chat_id, "🗂️ *בחר קטגוריה לתנועה זו:*", reply_markup=reply_markup)
             except ValueError:
-                send_message(token, chat_id, "❌ סכום לא תקין. אנא שלח מספר (למשל: 350):")
-        elif step == 2:
-            desc = text.strip()
-            amount = data["amount"]
-            
-            cat = "הכנסה - מנעולנות"
-            if any(kw in desc for kw in ["הנדימן", "הרכבה", "תלייה", "מדף", "ארון", "מסך"]):
-                cat = "הכנסה - הנדימן"
-                
-            db = load_data()
-            new_inc = {
-                "id": int(time.time()),
-                "date": datetime.date.today().isoformat(),
-                "category": cat,
-                "description": desc,
-                "amount": amount
-            }
-            db["income"].append(new_inc)
-            
-            # Save and clean state
-            if chat_id in user_states:
-                del user_states[chat_id]
-                
-            if save_data(db):
-                send_message(token, chat_id, f"✅ *ההכנסה נרשמה בהצלחה!* \nסכום: ₪{amount} | תיאור: {desc} ({cat})\nהנתונים עודכנו ומסונכרנים עם האתר.", reply_markup={"remove_keyboard": True})
+                send_message(token, chat_id, "❌ מספר לא תקין. אנא שלח סכום תקין (לדוגמה: 250):")
+        elif step == 3:
+            cat = text.strip()
+            if cat == "אחר":
+                state_info["step"] = 35
+                send_message(token, chat_id, "✍️ *הקלד את שם הקטגוריה האחרת:*", reply_markup={"remove_keyboard": True})
             else:
-                send_message(token, chat_id, "❌ תקלה בשמירת הנתונים במערכת.", reply_markup={"remove_keyboard": True})
+                data["category"] = cat
+                state_info["step"] = 4
+                send_message(token, chat_id, "✍️ *מה תיאור התנועה?* (כתב חופשי, למשל: תיקון דלת / רכישת מברגה):", reply_markup={"remove_keyboard": True})
+        elif step == 35:
+            data["category"] = text.strip()
+            state_info["step"] = 4
+            send_message(token, chat_id, "✍️ *מה תיאור התנועה?* (כתב חופשי, למשל: תיקון דלת / רכישת מברגה):", reply_markup={"remove_keyboard": True})
+        elif step == 4:
+            data["description"] = text.strip()
+            state_info["step"] = 5
+            today = datetime.date.today()
+            keyboard = build_calendar_keyboard(today.year, today.month)
+            send_message(token, chat_id, "📅 *בחר תאריך עבור התנועה מהיומן:*", reply_markup=keyboard)
+        elif step == 5:
+            parsed_date = parse_hebrew_date(text)
+            data["date"] = parsed_date
+            save_new_transaction(chat_id, data, token)
 
-    # --- ADD EXPENSE FLOW ---
-    elif flow == "adding_expense":
+    # --- MANAGE TASKS FLOW ---
+    elif flow == "managing_tasks":
         if step == 1:
-            try:
-                amount = float(text)
-                if amount <= 0:
-                    send_message(token, chat_id, "❌ הסכום חייב להיות גדול מ-0. אנא שלח מספר תקין:")
+            action = text.strip()
+            if action == "הוספת משימה":
+                state_info["flow"] = "adding_task"
+                state_info["step"] = 21
+                send_message(token, chat_id, "✍️ *מה תיאור המשימה החדשה?*", reply_markup={"remove_keyboard": True})
+            elif action == "הסרת משימה":
+                db = load_data()
+                tasks = db.get("tasks", [])
+                active_tasks = [t for t in tasks if not t.get("completed")]
+                if not active_tasks:
+                    send_message(token, chat_id, "אין משימות פעילות להסרה. 📋", reply_markup={"remove_keyboard": True})
+                    if chat_id in user_states:
+                        del user_states[chat_id]
                     return
-                data["amount"] = amount
-                state_info["step"] = 2
-                send_message(token, chat_id, "✍️ *מה תיאור ההוצאה?*\n(למשל: דלק, מברגה, מנעולים למלאי, פרסום)")
-            except ValueError:
-                send_message(token, chat_id, "❌ סכום לא תקין. אנא שלח מספר (למשל: 150):")
-        elif step == 2:
-            desc = text.strip()
-            amount = data["amount"]
-            
-            cat = "ציוד וכלי עבודה"
-            if any(kw in desc for kw in ["דלק", "נסיעה", "חניה"]):
-                cat = "נסיעות ודלק"
-            elif any(kw in desc for kw in ["פרסום", "שיווק", "פייסבוק"]):
-                cat = "שיווק ופרסום"
-            elif any(kw in desc for kw in ["מנעול", "צילינדר", "חלקים", "מלאי"]):
-                cat = "מלאי צילינדרים וחלקים"
                 
-            db = load_data()
-            new_exp = {
-                "id": int(time.time()),
-                "date": datetime.date.today().isoformat(),
-                "category": cat,
-                "description": desc,
-                "amount": amount
-            }
-            db["expenses"].append(new_exp)
-            
-            # Save and clean state
-            if chat_id in user_states:
-                del user_states[chat_id]
+                task_list_str = "🗑️ *בחר משימה להסרה:*\n\n"
+                keyboard_buttons = []
+                for idx, t in enumerate(active_tasks, 1):
+                    task_list_str += f"*{idx}.* {t['text']} (יעד: {t.get('targetDate', 'לא מוגדר')})\n"
+                    keyboard_buttons.append([{"text": str(idx)}])
+                keyboard_buttons.append([{"text": "ביטול"}])
                 
-            if save_data(db):
-                send_message(token, chat_id, f"✅ *ההוצאה נרשמה בהצלחה!* \nסכום: ₪{amount} | תיאור: {desc} ({cat})\nהנתונים עודכנו ומסונכרנים עם האתר.", reply_markup={"remove_keyboard": True})
+                data["active_tasks"] = active_tasks
+                state_info["flow"] = "removing_task"
+                state_info["step"] = 31
+                
+                reply_markup = {
+                    "keyboard": keyboard_buttons,
+                    "resize_keyboard": True,
+                    "one_time_keyboard": True
+                }
+                send_message(token, chat_id, task_list_str, reply_markup=reply_markup)
             else:
-                send_message(token, chat_id, "❌ תקלה בשמירת הנתונים במערכת.", reply_markup={"remove_keyboard": True})
+                send_message(token, chat_id, "❌ נא לבחור באחת האפשרויות:")
+
+    # --- ADD TASK FLOW ---
+    elif flow == "adding_task":
+        if step == 21:
+            data["text"] = text.strip()
+            state_info["step"] = 22
+            today = datetime.date.today()
+            keyboard = build_calendar_keyboard(today.year, today.month)
+            send_message(token, chat_id, "📅 *בחר תאריך יעד למשימה מהיומן:*", reply_markup=keyboard)
+        elif step == 22:
+            parsed_date = parse_hebrew_date(text)
+            data["targetDate"] = parsed_date
+            save_new_task(chat_id, data, token)
+
+    # --- REMOVE TASK FLOW ---
+    elif flow == "removing_task":
+        if step == 31:
+            choice = text.strip()
+            if choice == "ביטול":
+                if chat_id in user_states:
+                    del user_states[chat_id]
+                send_message(token, chat_id, "הסרת משימה בוטלה. 🛑", reply_markup={"remove_keyboard": True})
+                return
+                
+            try:
+                idx = int(choice) - 1
+                active_tasks = data["active_tasks"]
+                if idx < 0 or idx >= len(active_tasks):
+                    send_message(token, chat_id, "❌ מספר לא תקין. אנא בחר מספר מהרשימה:")
+                    return
+                    
+                task_to_remove = active_tasks[idx]
+                db = load_data()
+                db["tasks"] = [t for t in db.get("tasks", []) if t["id"] != task_to_remove["id"]]
+                
+                if chat_id in user_states:
+                    del user_states[chat_id]
+                    
+                if save_data(db):
+                    send_message(token, chat_id, f"🗑️ *המשימה הוסרה בהצלחה!*\n*{task_to_remove['text']}*\nהנתונים עודכנו ומסונכרנים עם האתר.", reply_markup={"remove_keyboard": True})
+                else:
+                    send_message(token, chat_id, "❌ תקלה בעדכון המערכת.", reply_markup={"remove_keyboard": True})
+            except ValueError:
+                send_message(token, chat_id, "❌ אנא בחר מספר תקין מהכפתורים או רשום 'ביטול':")
 
     # --- ADD LEAD FLOW ---
     elif flow == "adding_lead":
@@ -919,7 +1208,7 @@ def process_state_step(chat_id, text, token):
             parsed_date = parse_hebrew_date(text)
             data["date"] = parsed_date
             state_info["step"] = 2
-            send_message(token, chat_id, "👤 *מה שם הלקוח הפונה?*", reply_markup={"remove_keyboard": True})
+            send_message(token, chat_id, "👤 *מה שם הלקוח הפונה?*")
         elif step == 2:
             data["client"] = text.strip()
             state_info["step"] = 3
@@ -1078,6 +1367,12 @@ def main():
         if updates and updates.get("ok"):
             for update in updates.get("result", []):
                 last_update_id = update["update_id"] + 1
+                
+                # Check for callback_query (inline keyboard calendar)
+                callback_query = update.get("callback_query")
+                if callback_query:
+                    handle_callback_query(callback_query, token)
+                    continue
                 
                 # Verify sender is only the authorized user (Zachariah)
                 message = update.get("message")
