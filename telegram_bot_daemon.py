@@ -28,6 +28,11 @@ def load_config():
 
 def load_data():
     try:
+        # Run git pull to sync changes from the web dashboard
+        os.system('git pull origin main')
+    except Exception as e:
+        print("Git pull during load failed:", e)
+    try:
         with open(DATA_PATH, 'r', encoding='utf-8') as f:
             return json.load(f)
     except:
