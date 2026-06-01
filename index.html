@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>זכריה - פתרונות ושירותים לבית</title>
-    <link rel="stylesheet" href="style.css?v=2.0.5">
+    <link rel="stylesheet" href="style.css?v=2.0.6">
     <!-- FontAwesome for beautiful icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -21,14 +21,8 @@
                     <p>מערכת ניהול חכמה וסוכני AI • ירוחם והסביבה</p>
                 </div>
             </div>
-            <div class="header-actions" style="display: flex; gap: 10px; align-items: center;">
-                <div class="status-badge" id="statusBadge">
-                    <i class="fa-solid fa-circle-check"></i> הסוכנים במצב זמין
-                </div>
-                <button class="sync-settings-btn" onclick="openSyncModal()" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); border-radius: 8px; color: #fff; padding: 8px 12px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;">
-                    <i class="fa-solid fa-cloud" id="syncIcon"></i>
-                    <span id="syncText">סנכרון ענן</span>
-                </button>
+            <div class="status-badge" id="statusBadge">
+                <i class="fa-solid fa-circle-check"></i> הסוכנים במצב זמין
             </div>
         </header>
 
@@ -113,6 +107,9 @@
                             <button type="submit" class="btn">
                                 <i class="fa-solid fa-save"></i> שמור תנועה
                             </button>
+                            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 8px; text-align: center;">
+                                <i class="fa-solid fa-circle-info"></i> לעדכון מסונכרן בין המחשב לטלפון, מומלץ להזין תנועות דרך בוט הטלגרם.
+                            </span>
                         </form>
                     </div>
 
@@ -280,6 +277,9 @@
                             <button type="submit" class="btn">
                                 <i class="fa-solid fa-user-check"></i> שמור פנייה
                             </button>
+                            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 8px; text-align: center;">
+                                <i class="fa-solid fa-circle-info"></i> לעדכון מסונכרן בין המחשב לטלפון, מומלץ להזין פניות דרך בוט הטלגרם.
+                            </span>
                         </form>
                     </div>
 
@@ -401,38 +401,9 @@
         </main>
     </div>
 
-    <!-- Sync Settings Modal -->
-    <div class="modal" id="syncModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
-        <div class="card" style="width: 90%; max-width: 450px; margin: 0; padding: 25px; border: 1px solid var(--primary); box-shadow: 0 0 25px rgba(0, 200, 255, 0.2); animation: modalFadeIn 0.3s ease;">
-            <h2 class="card-title" style="color: var(--primary); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; margin-bottom: 15px;">
-                <span><i class="fa-solid fa-cloud-rotate-reverse"></i> הגדרות סנכרון ענן (GitHub Sync)</span>
-                <button onclick="closeSyncModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px;"><i class="fa-solid fa-xmark"></i></button>
-            </h2>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; text-align: right;">
-                הגדרת מפתח גישה אישי של GitHub (Token) תאפשר למערכת לסנכרן את כל ההכנסות, ההוצאות, הפניות והיעדים שלך בין הטלפון למחשב ובוט הטלגרם באופן דו-כיווני ומיידי.
-            </p>
-            <div class="form-group" style="text-align: right;">
-                <label for="githubTokenInput" style="display: block; margin-bottom: 8px; font-weight: 700;">GitHub Access Token (PAT)</label>
-                <input type="password" id="githubTokenInput" placeholder="ghp_..." style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; margin-bottom: 10px; text-align: left; direction: ltr;">
-                <span style="font-size: 11px; color: var(--text-muted); display: block; line-height: 1.4;">הטוקן נשמר בבטחה רק בדפדפן המקומי של המכשיר שלך ואינו נשלח לאף שרת חיצוני חוץ מה-API הרשמי של GitHub.</span>
-            </div>
-            
-            <div id="syncStatusMessage" style="font-size: 13px; margin: 15px 0; padding: 8px 12px; border-radius: 6px; display: none; text-align: right;"></div>
-            
-            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 25px;">
-                <button class="btn" style="background: var(--success); margin: 0; width: auto; padding: 10px 20px;" onclick="saveSyncSettings()">
-                    <i class="fa-solid fa-save"></i> שמור והתחבר
-                </button>
-                <button class="btn" style="background: var(--danger); margin: 0; width: auto; padding: 10px 20px;" onclick="clearSyncSettings()">
-                    <i class="fa-solid fa-trash"></i> נתק סנכרון
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- Toast Notification element -->
     <div class="toast" id="toast">הטקסט הועתק בהצלחה! 📋</div>
 
-    <script src="app.js?v=2.0.5"></script>
+    <script src="app.js?v=2.0.6"></script>
 </body>
 </html>
