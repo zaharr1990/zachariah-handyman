@@ -20,6 +20,15 @@
       "source": "פייסבוק",
       "closed": true,
       "reason": ""
+    },
+    {
+      "id": 1780299639,
+      "date": "2026-05-28",
+      "client": "רחלי הירש",
+      "service": "חרום - פריצת דלת",
+      "source": "פייסבוק",
+      "closed": false,
+      "reason": "חוסר זמינות"
     }
   ]
 }
