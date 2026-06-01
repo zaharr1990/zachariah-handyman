@@ -126,38 +126,53 @@ const GITHUB_REPO_OWNER = 'zaharr1990';
 const GITHUB_REPO_NAME = 'zachariah-handyman';
 const GITHUB_FILE_PATH = 'data.json';
 
+// Helper for modern UTF-8 safe base64 decoding
+function decodeBase64Utf8(base64Str) {
+    const cleanStr = base64Str.replace(/\s/g, '');
+    const binString = atob(cleanStr);
+    const bytes = Uint8Array.from(binString, (m) => m.codePointAt(0));
+    return new TextDecoder().decode(bytes);
+}
+
+// Helper for modern UTF-8 safe base64 encoding
+function encodeBase64Utf8(str) {
+    const bytes = new TextEncoder().encode(str);
+    let binString = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+        binString += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binString);
+}
+
 let pollingInterval = null;
 
 // Check auth token from local config or query param
 async function checkAuthAndConfig() {
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    if (isLocalhost) {
+        // Local proxy mode: bypass token checks, always active
+        localStorage.setItem('zachariah_github_token', 'local_proxy');
+        updateSyncButtonState('success');
+        startPolling();
+        return;
+    }
+    
     // 1. Check query parameter (from scan of QR code)
     const urlParams = new URLSearchParams(window.location.search);
     const urlToken = urlParams.get('token');
     if (urlToken) {
-        localStorage.setItem('zachariah_github_token', urlToken);
+        if (urlToken === 'local_proxy') {
+            localStorage.removeItem('zachariah_github_token');
+        } else {
+            localStorage.setItem('zachariah_github_token', urlToken);
+            showToast("חיבור מובייל בוצע בהצלחה! 📱☁️");
+        }
         const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
-        showToast("חיבור מובייל בוצע בהצלחה! 📱☁️");
     }
     
-    // 2. Try fetching config.json on localhost
     let token = localStorage.getItem('zachariah_github_token');
-    if (!token) {
-        try {
-            const res = await fetch('config.json?t=' + Date.now());
-            if (res.ok) {
-                const configData = await res.json();
-                if (configData.github_token) {
-                    localStorage.setItem('zachariah_github_token', configData.github_token);
-                    token = configData.github_token;
-                    showToast("חיבור אוטומטי למחשב בוצע בהצלחה! 💻☁️");
-                }
-            }
-        } catch (e) {
-            console.log("Not running locally or config.json missing. Skipping local token load.");
-        }
-    }
-    
     updateSyncButtonState(token ? 'success' : 'inactive');
     
     if (token) {
@@ -172,31 +187,53 @@ function startPolling() {
         const token = localStorage.getItem('zachariah_github_token');
         if (!token) return;
         
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        
         try {
-            const url = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}`;
-            const response = await fetch(url + '?t=' + Date.now(), {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Cache-Control': 'no-cache'
+            if (isLocalhost) {
+                const response = await fetch('/api/data?t=' + Date.now());
+                if (response.ok) {
+                    const fetchedData = await response.json();
+                    const fetchedStr = JSON.stringify(fetchedData);
+                    const localStr = localStorage.getItem('zachariah_business_data');
+                    
+                    if (fetchedStr !== localStr) {
+                        console.log("Local proxy detected cloud database change. Updating local view...");
+                        appData = fetchedData;
+                        localStorage.setItem('zachariah_business_data', fetchedStr);
+                        
+                        renderFinance();
+                        renderTasks();
+                        renderCRM();
+                        
+                        updateSyncButtonState('success');
+                    }
                 }
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                const currentSha = localStorage.getItem('zachariah_github_file_sha');
-                if (data.sha !== currentSha) {
-                    console.log("Cloud database changed. Updating local view...");
-                    const decodedContent = decodeURIComponent(escape(atob(data.content)));
-                    appData = JSON.parse(decodedContent);
-                    localStorage.setItem('zachariah_business_data', JSON.stringify(appData));
-                    localStorage.setItem('zachariah_github_file_sha', data.sha);
-                    
-                    renderFinance();
-                    renderTasks();
-                    renderCRM();
-                    
-                    updateSyncButtonState('success');
+            } else {
+                const url = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}`;
+                const response = await fetch(url + '?t=' + Date.now(), {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const currentSha = localStorage.getItem('zachariah_github_file_sha');
+                    if (data.sha !== currentSha) {
+                        console.log("Cloud database changed. Updating local view...");
+                        appData = JSON.parse(decodeBase64Utf8(data.content));
+                        localStorage.setItem('zachariah_business_data', JSON.stringify(appData));
+                        localStorage.setItem('zachariah_github_file_sha', data.sha);
+                        
+                        renderFinance();
+                        renderTasks();
+                        renderCRM();
+                        
+                        updateSyncButtonState('success');
+                    }
                 }
             }
         } catch (e) {
@@ -206,15 +243,30 @@ function startPolling() {
 }
 
 // Open modal for mobile QR login
-function openMobileSyncModal() {
-    const token = localStorage.getItem('zachariah_github_token');
+async function openMobileSyncModal() {
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    let token = localStorage.getItem('zachariah_github_token');
+    
+    let realToken = token;
+    if (isLocalhost) {
+        try {
+            const res = await fetch('config.json?t=' + Date.now());
+            if (res.ok) {
+                const configData = await res.json();
+                realToken = configData.github_token || '';
+            }
+        } catch (e) {
+            console.error("Failed to load config.json for QR generation:", e);
+        }
+    }
+    
     const input = document.getElementById('manualTokenInput');
     if (input) {
-        input.value = token || '';
+        input.value = (realToken === 'local_proxy') ? '' : (realToken || '');
     }
     
     // Generate QR code if token exists, otherwise show placeholder/empty
-    const tokenForQr = token || '';
+    const tokenForQr = (realToken === 'local_proxy') ? '' : (realToken || '');
     const url = `https://zaharr1990.github.io/zachariah-handyman/?token=${tokenForQr}`;
     const qrUrl = tokenForQr 
         ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`
@@ -261,11 +313,25 @@ function saveManualToken() {
 }
 
 // Update cloud sync visual button state
-function updateSyncButtonState(state) {
+function updateSyncButtonState(state, errorMessage = '') {
     const btn = document.getElementById('syncIndicatorBtn');
     const icon = document.getElementById('syncIndicatorIcon');
     const text = document.getElementById('syncIndicatorText');
     if (!btn || !icon || !text) return;
+    
+    // Reset tooltip
+    btn.removeAttribute('title');
+    
+    // Update modal error container if it exists
+    const modalError = document.getElementById('syncModalError');
+    if (modalError) {
+        if (state === 'error' && errorMessage) {
+            modalError.innerText = "שגיאה: " + errorMessage;
+            modalError.style.display = 'block';
+        } else if (state === 'success' || state === 'inactive' || state === 'syncing') {
+            modalError.style.display = 'none';
+        }
+    }
     
     if (state === 'inactive') {
         btn.style.borderColor = 'var(--border-color)';
@@ -292,6 +358,9 @@ function updateSyncButtonState(state) {
         btn.style.color = 'var(--danger)';
         icon.className = 'fa-solid fa-circle-exclamation';
         text.innerText = 'שגיאת סנכרון';
+        if (errorMessage) {
+            btn.setAttribute('title', errorMessage);
+        }
     }
 }
 
@@ -299,35 +368,56 @@ function updateSyncButtonState(state) {
 async function loadData() {
     let loaded = false;
     const token = localStorage.getItem('zachariah_github_token');
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     
     if (token) {
         updateSyncButtonState('syncing');
         try {
-            const url = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}?t=${Date.now()}`;
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Cache-Control': 'no-cache'
-                }
-            });
+            let fetchedData = null;
             
-            if (response.ok) {
-                const data = await response.json();
-                const decodedContent = decodeURIComponent(escape(atob(data.content)));
-                appData = JSON.parse(decodedContent);
+            if (isLocalhost) {
+                const response = await fetch('/api/data?t=' + Date.now());
+                if (response.ok) {
+                    fetchedData = await response.json();
+                    localStorage.setItem('zachariah_github_file_sha', 'local_proxy');
+                } else {
+                    throw new Error(`Local proxy returned status ${response.status} ${response.statusText}`);
+                }
+            } else {
+                const url = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}?t=${Date.now()}`;
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    fetchedData = JSON.parse(decodeBase64Utf8(data.content));
+                    localStorage.setItem('zachariah_github_file_sha', data.sha);
+                } else {
+                    let errMsg = `GitHub load error: ${response.status} ${response.statusText}`;
+                    if (response.status === 401 || response.status === 403) {
+                        console.error("Authentication expired or invalid. Resetting sync status.");
+                        localStorage.removeItem('zachariah_github_token');
+                        updateSyncButtonState('inactive');
+                    } else {
+                        updateSyncButtonState('error', errMsg);
+                    }
+                }
+            }
+            
+            if (fetchedData) {
+                appData = fetchedData;
                 localStorage.setItem('zachariah_business_data', JSON.stringify(appData));
-                localStorage.setItem('zachariah_github_file_sha', data.sha);
                 updateSyncButtonState('success');
                 loaded = true;
-            } else if (response.status === 401 || response.status === 403) {
-                console.error("Authentication expired or invalid. Resetting sync status.");
-                localStorage.removeItem('zachariah_github_token');
-                updateSyncButtonState('inactive');
             }
         } catch (e) {
             console.error("Failed to load business data from GitHub Pages:", e);
-            updateSyncButtonState('error');
+            updateSyncButtonState('error', e.message || String(e));
         }
     }
     
@@ -382,65 +472,97 @@ async function saveDataCloud(changeCallback) {
     
     updateSyncButtonState('syncing');
     
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
     try {
-        const url = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}`;
-        
-        // A. Fetch current remote version to avoid conflict
-        const getResponse = await fetch(url + '?t=' + Date.now(), {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/vnd.github.v3+json',
-                'Cache-Control': 'no-cache'
+        if (isLocalhost) {
+            // A. Fetch current remote version via proxy
+            const getResponse = await fetch('/api/data?t=' + Date.now());
+            if (!getResponse.ok) {
+                throw new Error(`Cloud proxy fetch failed with status ${getResponse.status}`);
             }
-        });
-        
-        if (!getResponse.ok) {
-            throw new Error(`Cloud fetch failed with status ${getResponse.status}`);
-        }
-        
-        const remoteInfo = await getResponse.json();
-        const decodedContent = decodeURIComponent(escape(atob(remoteInfo.content)));
-        const remoteData = JSON.parse(decodedContent);
-        
-        // B. Apply change callback on remote data (structural merge)
-        changeCallback(remoteData);
-        
-        // C. PUT updated data back to GitHub
-        const base64Content = btoa(unescape(encodeURIComponent(JSON.stringify(remoteData, null, 2))));
-        const putResponse = await fetch(url, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/vnd.github.v3+json'
-            },
-            body: JSON.stringify({
-                message: 'Auto-update business data from Web Dashboard',
-                content: base64Content,
-                sha: remoteInfo.sha
-            })
-        });
-        
-        if (putResponse.ok) {
-            const putData = await putResponse.json();
-            localStorage.setItem('zachariah_github_file_sha', putData.content.sha);
+            const remoteData = await getResponse.json();
             
-            // D. Set local state to the merged results
-            appData = remoteData;
-            saveData();
+            // B. Apply change callback on remote data (structural merge)
+            changeCallback(remoteData);
             
-            renderFinance();
-            renderTasks();
-            renderCRM();
+            // C. POST updated data back to proxy
+            const putResponse = await fetch('/api/data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(remoteData)
+            });
             
-            updateSyncButtonState('success');
+            if (putResponse.ok) {
+                appData = remoteData;
+                saveData();
+                renderFinance();
+                renderTasks();
+                renderCRM();
+                updateSyncButtonState('success');
+            } else {
+                throw new Error(`Local proxy POST failed with status ${putResponse.status}`);
+            }
         } else {
-            console.error("Commit update failed, status:", putResponse.status);
-            updateSyncButtonState('error');
+            const url = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}`;
+            
+            // A. Fetch current remote version to avoid conflict
+            const getResponse = await fetch(url + '?t=' + Date.now(), {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Cache-Control': 'no-cache'
+                }
+            });
+            
+            if (!getResponse.ok) {
+                throw new Error(`Cloud fetch failed with status ${getResponse.status}`);
+            }
+            
+            const remoteInfo = await getResponse.json();
+            const remoteData = JSON.parse(decodeBase64Utf8(remoteInfo.content));
+            
+            // B. Apply change callback on remote data (structural merge)
+            changeCallback(remoteData);
+            
+            // C. PUT updated data back to GitHub
+            const base64Content = encodeBase64Utf8(JSON.stringify(remoteData, null, 2));
+            const putResponse = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/vnd.github.v3+json'
+                },
+                body: JSON.stringify({
+                    message: 'Auto-update business data from Web Dashboard',
+                    content: base64Content,
+                    sha: remoteInfo.sha
+                })
+            });
+            
+            if (putResponse.ok) {
+                const putData = await putResponse.json();
+                localStorage.setItem('zachariah_github_file_sha', putData.content.sha);
+                
+                // D. Set local state to the merged results
+                appData = remoteData;
+                saveData();
+                
+                renderFinance();
+                renderTasks();
+                renderCRM();
+                
+                updateSyncButtonState('success');
+            } else {
+                throw new Error(`GitHub PUT update failed with status ${putResponse.status}`);
+            }
         }
     } catch (e) {
         console.error("Error during cloud sync save:", e);
-        updateSyncButtonState('error');
+        updateSyncButtonState('error', e.message || String(e));
     }
 }
 
