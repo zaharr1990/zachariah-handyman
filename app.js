@@ -130,8 +130,8 @@ async function loadData() {
     const token = localStorage.getItem('zachariah_github_token');
     if (token) {
         updateSyncButtonState('syncing');
-        const pulled = await pullFromGitHub();
-        if (pulled) {
+        const result = await pullFromGitHub();
+        if (result.success) {
             console.log("Successfully pulled database from cloud on startup.");
             return;
         }
@@ -879,7 +879,7 @@ function showToast(message) {
 
 async function pullFromGitHub() {
     const token = localStorage.getItem('zachariah_github_token');
-    if (!token) return false;
+    if (!token) return { success: false, error: 'לא קיים מפתח גישה' };
     
     updateSyncButtonState('syncing');
     
@@ -887,7 +887,7 @@ async function pullFromGitHub() {
         const url = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}`;
         const response = await fetch(url, {
             headers: {
-                'Authorization': `token ${token}`,
+                'Authorization': `Bearer ${token}`,
                 'Accept': 'application/vnd.github.v3+json',
                 'Cache-Control': 'no-cache'
             }
@@ -912,16 +912,16 @@ async function pullFromGitHub() {
             renderCRM();
             
             updateSyncButtonState('success');
-            return true;
+            return { success: true };
         } else {
             console.error('Failed to pull from GitHub, status:', response.status);
             updateSyncButtonState('error');
-            return false;
+            return { success: false, error: `שגיאת API של GitHub (${response.status}: ${response.statusText})` };
         }
     } catch (e) {
         console.error('Error pulling from GitHub:', e);
         updateSyncButtonState('error');
-        return false;
+        return { success: false, error: `שגיאת רשת/CORS (${e.message})` };
     }
 }
 
@@ -937,7 +937,7 @@ async function pushToGitHub() {
         // Get the latest SHA first to prevent out-of-sync overwrite merge conflicts
         const getResponse = await fetch(url, {
             headers: {
-                'Authorization': `token ${token}`,
+                'Authorization': `Bearer ${token}`,
                 'Accept': 'application/vnd.github.v3+json',
                 'Cache-Control': 'no-cache'
             }
@@ -956,7 +956,7 @@ async function pushToGitHub() {
         const putResponse = await fetch(url, {
             method: 'PUT',
             headers: {
-                'Authorization': `token ${token}`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
                 'Accept': 'application/vnd.github.v3+json'
             },
@@ -1043,14 +1043,15 @@ async function saveSyncSettings() {
     updateSyncModalStatus();
     
     // Attempt an immediate pull to verify connection
-    const success = await pullFromGitHub();
-    if (success) {
+    const result = await pullFromGitHub();
+    if (result.success) {
         showToast("הסנכרון הופעל והתחבר בהצלחה! ☁️");
         closeSyncModal();
     } else {
-        alert("שגיאה בחיבור ל-GitHub. אנא ודא שהטוקן תקין ושיש לו הרשאות כתיבה לתיקייה.");
+        alert("שגיאה בחיבור ל-GitHub: " + result.error + "\n\nאנא ודא שהטוקן תקין, שהאינטרנט פעיל ושום חוסם פרסומות/תוספת אבטחה לא מונעת גישה ל-GitHub.");
         localStorage.removeItem('zachariah_github_token');
         updateSyncModalStatus();
+        updateSyncButtonState('inactive');
     }
 }
 
