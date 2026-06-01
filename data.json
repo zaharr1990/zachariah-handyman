@@ -1,6 +1,14 @@
 {
   "expenses": [],
-  "income": [],
+  "income": [
+    {
+      "id": 1780303106,
+      "date": "2026-05-18",
+      "category": "הכנסה מנעולנות",
+      "description": "החלפת צילינדר פלדלת",
+      "amount": 350.0
+    }
+  ],
   "tasks": [],
   "leads": [
     {
