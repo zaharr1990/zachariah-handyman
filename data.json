@@ -38,6 +38,15 @@
       "source": "בטל",
       "closed": false,
       "reason": "אחר: כ"
+    },
+    {
+      "id": 1780300000,
+      "date": "2026-05-18",
+      "client": "אריה",
+      "service": "החלפת צילינדר לדלת פלדה",
+      "source": "פייסבוק",
+      "closed": true,
+      "reason": ""
     }
   ]
 }
