@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>זכריה - פתרונות ושירותים לבית</title>
-    <link rel="stylesheet" href="style.css?v=2.1.0">
+    <link rel="stylesheet" href="style.css?v=2.1.2">
     <!-- FontAwesome for beautiful icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -49,6 +49,10 @@
             <button class="tab-btn" onclick="switchTab('tasks')">
                 <i class="fa-solid fa-list-check"></i>
                 <span>יעדים ומשימות</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('bot')">
+                <i class="fa-brands fa-telegram"></i>
+                <span>פקודות הבוט</span>
             </button>
         </nav>
 
@@ -398,6 +402,128 @@
                     </div>
                 </div>
             </section>
+
+            <!-- TAB 5: BOT COMMANDS -->
+            <section id="bot-tab" class="tab-content">
+                <div class="card" style="border: 1px solid rgba(0, 136, 204, 0.3); background: rgba(0, 136, 204, 0.02); margin-bottom: 24px; padding: 24px; border-radius: 16px;">
+                    <h2 class="card-title" style="color: #0088cc; border-bottom-color: rgba(0, 136, 204, 0.2); display: flex; align-items: center; gap: 10px; font-size: 20px;">
+                        <i class="fa-brands fa-telegram" style="font-size: 24px;"></i>
+                        מדריך הפקודות והשימוש בבוט הטלגרם
+                    </h2>
+                    <p style="font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px;">
+                        זכריה, בבוט הטלגרם שלך משמש כעוזר אישי לניהול העסק מהשטח. כל נתון שתזין בבוט (לידים, משימות, כספים) יסונכרן ישירות לאתר תוך פחות מ-10 שניות!
+                    </p>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        <!-- Lead Card -->
+                        <div class="card" style="margin: 0; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255,255,255,0.05); padding: 20px; transition: all 0.3s ease; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                                    <div style="background: rgba(0, 200, 255, 0.1); color: var(--primary); padding: 8px; border-radius: 8px; font-size: 16px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fa-solid fa-user-plus"></i>
+                                    </div>
+                                    <h3 style="font-size: 16px; color: #fff; font-weight: 700;">רישום ליד / פנייה</h3>
+                                </div>
+                                <div style="font-size: 20px; font-weight: 800; color: var(--primary); margin-bottom: 10px; font-family: monospace;">ליד</div>
+                                <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 15px;">
+                                    פתיחת אשף אינטראקטיבי לתיעוד פנייה חדשה. הבוט יציג יומן לבחירת תאריך, ישאל על שם הלקוח והשירות, יציג מקלדת לבחירת מקור ההגעה (וואצאפ, פייסבוק וכו') וישאל אם העסקה נסגרה.
+                                </p>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.03);">
+                                <strong style="color: #fff;">פקודה חלופית:</strong> פניה חדשה
+                            </div>
+                        </div>
+
+                        <!-- Task Card -->
+                        <div class="card" style="margin: 0; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255,255,255,0.05); padding: 20px; transition: all 0.3s ease; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                                    <div style="background: rgba(145, 80, 45, 0.1); color: var(--success); padding: 8px; border-radius: 8px; font-size: 16px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fa-solid fa-list-check"></i>
+                                    </div>
+                                    <h3 style="font-size: 16px; color: #fff; font-weight: 700;">ניהול משימות ויעדים</h3>
+                                </div>
+                                <div style="font-size: 20px; font-weight: 800; color: var(--success); margin-bottom: 10px; font-family: monospace;">משימה</div>
+                                <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 15px;">
+                                    ניהול משימות העסק מהשטח. הבוט יציג כפתורים לבחירה בין **הוספת משימה** (מזינים תיאור ובוחרים תאריך יעד ביומן) לבין **הסרת משימה** (מציג רשימת משימות וכפתורים למחיקה מהירה).
+                                </p>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.03);">
+                                <strong style="color: #fff;">מחיקה מהירה:</strong> /done [מספר]
+                            </div>
+                        </div>
+
+                        <!-- Finance Card -->
+                        <div class="card" style="margin: 0; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255,255,255,0.05); padding: 20px; transition: all 0.3s ease; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                                    <div style="background: rgba(255, 215, 0, 0.1); color: #ffd700; padding: 8px; border-radius: 8px; font-size: 16px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fa-solid fa-wallet"></i>
+                                    </div>
+                                    <h3 style="font-size: 16px; color: #fff; font-weight: 700;">דיווח כספים / תנועה</h3>
+                                </div>
+                                <div style="font-size: 20px; font-weight: 800; color: #ffd700; margin-bottom: 10px; font-family: monospace;">פיננסים</div>
+                                <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 15px;">
+                                    דיווח הכנסה או הוצאה. הבוט יקבל את הסכום, יציג קטגוריות מוגדרות מראש לבחירה מהירה (ציוד, דלק, פרסום, מנעולנות, הנדימן וכו'), יבקש תיאור קצר, ויפתח את היומן לבחירת תאריך.
+                                </p>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.03);">
+                                <strong style="color: #fff;">מעקף מהיר:</strong> "הכנסה" או "הוצאה"
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bot Quick Commands Table -->
+                    <div class="card" style="margin-top: 24px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); padding: 20px;">
+                        <h3 style="font-size: 15px; color: #fff; margin-bottom: 15px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                            <i class="fa-solid fa-bolt"></i> פקודות מהירות (Slash Commands)
+                        </h3>
+                        <div class="table-container" style="margin: 0; border: none; background: transparent;">
+                            <table style="width: 100%; border-collapse: collapse; text-align: right;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); color: var(--text-muted); font-size: 12px;">
+                                        <th style="padding: 10px 5px;">פקודה</th>
+                                        <th style="padding: 10px 5px;">תיאור ופעולה</th>
+                                        <th style="padding: 10px 5px;">דוגמה לשימוש מהיר</th>
+                                    </tr>
+                                </thead>
+                                <tbody style="font-size: 13px; color: var(--text-main);">
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                                        <td style="padding: 12px 5px; font-family: monospace; color: var(--primary); font-weight: 700;">/status</td>
+                                        <td style="padding: 12px 5px;">סקירה פיננסית מהירה (יתרה, הכנסות והוצאות נוכחיות).</td>
+                                        <td style="padding: 12px 5px; color: var(--text-muted); font-family: monospace;">/status</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                                        <td style="padding: 12px 5px; font-family: monospace; color: var(--primary); font-weight: 700;">/crm</td>
+                                        <td style="padding: 12px 5px;">דוח פניות לקוחות, אחוזי המרה, התנגדויות מובילות והמלצות סוכן CRO.</td>
+                                        <td style="padding: 12px 5px; color: var(--text-muted); font-family: monospace;">/crm</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                                        <td style="padding: 12px 5px; font-family: monospace; color: var(--primary); font-weight: 700;">/tasks</td>
+                                        <td style="padding: 12px 5px;">הצגת רשימת משימות פעילות לצמיחה ויעדים.</td>
+                                        <td style="padding: 12px 5px; color: var(--text-muted); font-family: monospace;">/tasks</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                                        <td style="padding: 12px 5px; font-family: monospace; color: var(--primary); font-weight: 700;">/done [מספר]</td>
+                                        <td style="padding: 12px 5px;">סימון משימה כהושלמה על פי המספר הסידורי שלה.</td>
+                                        <td style="padding: 12px 5px; color: var(--text-muted); font-family: monospace;">/done 2</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                                        <td style="padding: 12px 5px; font-family: monospace; color: var(--primary); font-weight: 700;">/post [מספר]</td>
+                                        <td style="padding: 12px 5px;">שליחת פוסט שיווקי מוכן להעתקה לקבוצות פייסבוק כולל תמונת מותג תואמת.</td>
+                                        <td style="padding: 12px 5px; color: var(--text-muted); font-family: monospace;">/post 1</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                                        <td style="padding: 12px 5px; font-family: monospace; color: var(--primary); font-weight: 700;">/review [פרטים]</td>
+                                        <td style="padding: 12px 5px;">יצירת הודעת בקשת חוות דעת מוכנה אישית ושליחה ללקוח בוואטסאפ.</td>
+                                        <td style="padding: 12px 5px; color: var(--text-muted); font-family: monospace;">/review ישראל, החלפת מנעול</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -445,6 +571,6 @@
     <!-- Toast Notification element -->
     <div class="toast" id="toast">הטקסט הועתק בהצלחה! 📋</div>
 
-    <script src="app.js?v=2.1.0"></script>
+    <script src="app.js?v=2.1.2"></script>
 </body>
 </html>

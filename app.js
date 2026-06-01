@@ -111,7 +111,7 @@ function switchTab(tabId) {
     document.getElementById(`${tabId}-tab`).classList.add('active');
     
     // Find button to active
-    const btnIndex = tabId === 'finance' ? 0 : tabId === 'agents' ? 1 : tabId === 'crm' ? 2 : 3;
+    const btnIndex = tabId === 'finance' ? 0 : tabId === 'agents' ? 1 : tabId === 'crm' ? 2 : tabId === 'tasks' ? 3 : 4;
     if (document.querySelectorAll('.tab-btn')[btnIndex]) {
         document.querySelectorAll('.tab-btn')[btnIndex].classList.add('active');
     }
