@@ -256,7 +256,14 @@ def handle_command(cmd_text, token, chat_id):
         raw_args = cmd_text[len('/lead'):].strip()
         if not raw_args:
             user_states[chat_id] = {"flow": "adding_lead", "step": 1, "data": {}}
-            send_message(token, chat_id, "👤 *התחלת רישום פנייה (ליד) חדשה*\n\nמה שם הלקוח הפונה?\n\n*(שלח 'ביטול' בכל שלב לעצירה)*", reply_markup={"remove_keyboard": True})
+            reply_markup = {
+                "keyboard": [
+                    [{"text": "היום"}]
+                ],
+                "resize_keyboard": True,
+                "one_time_keyboard": True
+            }
+            send_message(token, chat_id, "👤 *התחלת רישום פנייה (ליד) חדשה*\n\n📅 *מה תאריך הפנייה?*\nהקלד תאריך בפורמט DD/MM/YYYY, או לחץ/הקלד **`היום`** כדי להשתמש בתאריך של היום:\n\n*(שלח 'ביטול' בכל שלב לעצירה)*", reply_markup=reply_markup)
             return
             
         if ',' in raw_args:
@@ -698,9 +705,16 @@ def handle_free_text(text, token, chat_id):
         user_states[chat_id] = {"flow": "adding_expense", "step": 1, "data": {}}
         send_message(token, chat_id, "💸 *התחלת רישום הוצאה חדשה*\n\nמה סכום ההוצאה בשקלים? (שלח מספר, למשל: 150)\n\n*(שלח 'ביטול' בכל שלב לעצירה)*", reply_markup={"remove_keyboard": True})
         return
-    elif text_clean in ["פנייה", "פנייה חדשה", "ליד", "ליד חדש", "רישום פנייה", "פניות"]:
+    elif text_clean in ["פנייה", "פנייה חדשה", "פניה", "פניה חדשה", "ליד", "ליד חדש", "רישום פנייה", "רישום פניה", "פניות"]:
         user_states[chat_id] = {"flow": "adding_lead", "step": 1, "data": {}}
-        send_message(token, chat_id, "👤 *התחלת רישום פנייה (ליד) חדשה*\n\nמה שם הלקוח הפונה?\n\n*(שלח 'ביטול' בכל שלב לעצירה)*", reply_markup={"remove_keyboard": True})
+        reply_markup = {
+            "keyboard": [
+                [{"text": "היום"}]
+            ],
+            "resize_keyboard": True,
+            "one_time_keyboard": True
+        }
+        send_message(token, chat_id, "👤 *התחלת רישום פנייה (ליד) חדשה*\n\n📅 *מה תאריך הפנייה?*\nהקלד תאריך בפורמט DD/MM/YYYY, או לחץ/הקלד **`היום`** כדי להשתמש בתאריך של היום:\n\n*(שלח 'ביטול' בכל שלב לעצירה)*", reply_markup=reply_markup)
         return
     
     # 1. Weekday queries
@@ -792,6 +806,19 @@ def handle_free_text(text, token, chat_id):
 
 # State machine for interactive flows
 user_states = {}
+
+def parse_hebrew_date(date_str):
+    date_str = date_str.strip()
+    if date_str == 'היום' or date_str.lower() == 'today':
+        return datetime.date.today().isoformat()
+    # Try parsing DD/MM/YYYY or DD/MM/YY
+    for fmt in ('%d/%m/%Y', '%d/%m/%y', '%Y-%m-%d'):
+        try:
+            return datetime.datetime.strptime(date_str, fmt).date().isoformat()
+        except ValueError:
+            pass
+    # Default fallback to today
+    return datetime.date.today().isoformat()
 
 def process_state_step(chat_id, text, token):
     state_info = user_states.get(chat_id)
@@ -889,30 +916,51 @@ def process_state_step(chat_id, text, token):
     # --- ADD LEAD FLOW ---
     elif flow == "adding_lead":
         if step == 1:
-            data["client"] = text.strip()
+            parsed_date = parse_hebrew_date(text)
+            data["date"] = parsed_date
             state_info["step"] = 2
-            send_message(token, chat_id, "🛠️ *מה סוג העבודה המבוקשת?*\n(למשל: החלפת צילינדר, תליית טלוויזיה, הרכבת ארון)")
+            send_message(token, chat_id, "👤 *מה שם הלקוח הפונה?*", reply_markup={"remove_keyboard": True})
         elif step == 2:
-            data["service"] = text.strip()
+            data["client"] = text.strip()
             state_info["step"] = 3
+            send_message(token, chat_id, "🛠️ *מה השירות המבוקש? (כתב חופשי)*\n(למשל: החלפת צילינדר, תליית טלוויזיה, הרכבת ארון)")
+        elif step == 3:
+            data["service"] = text.strip()
+            state_info["step"] = 4
             reply_markup = {
                 "keyboard": [
-                    [{"text": "וואטסאפ"}, {"text": "פייסבוק"}],
-                    [{"text": "גוגל מפות"}, {"text": "המלצה"}],
+                    [{"text": "וואצאפ"}, {"text": "פייסבוק"}],
+                    [{"text": "גוגל"}, {"text": "המלצה"}],
                     [{"text": "אחר"}]
                 ],
                 "resize_keyboard": True,
                 "one_time_keyboard": True
             }
             send_message(token, chat_id, "📢 *מאיפה הגיע הלקוח (מקור הפנייה)?*", reply_markup=reply_markup)
-        elif step == 3:
+        elif step == 4:
             source = text.strip()
-            valid_sources = {"וואטסאפ": "וואטסאפ", "whatsapp": "וואטסאפ", 
-                             "פייסבוק": "פייסבוק", "facebook": "פייסבוק",
-                             "גוגל": "גוגל מפות", "google": "גוגל מפות", "מפות": "גוגל מפות",
-                             "המלצה": "המלצה", "recommendation": "המלצה"}
-            data["source"] = valid_sources.get(source.lower(), source)
-            state_info["step"] = 4
+            if source == "אחר":
+                state_info["step"] = 45  # Step 4.5 for other source input
+                send_message(token, chat_id, "✍️ *הקלד את מקור ההגעה האחר:*", reply_markup={"remove_keyboard": True})
+            else:
+                valid_sources = {"וואצאפ": "וואטסאפ", "וואטסאפ": "וואטסאפ", "whatsapp": "וואטסאפ", 
+                                 "פייסבוק": "פייסבוק", "facebook": "פייסבוק",
+                                 "גוגל": "גוגל מפות", "google": "גוגל מפות", "מפות": "גוגל מפות", "גוגל מפות": "גוגל מפות",
+                                 "המלצה": "המלצה", "recommendation": "המלצה"}
+                data["source"] = valid_sources.get(source.lower(), source)
+                state_info["step"] = 5
+                reply_markup = {
+                    "keyboard": [
+                        [{"text": "כן"}, {"text": "לא"}]
+                    ],
+                    "resize_keyboard": True,
+                    "one_time_keyboard": True
+                }
+                send_message(token, chat_id, "🚦 *האם נסגרה העסקה?*", reply_markup=reply_markup)
+        elif step == 45:
+            custom_source = text.strip()
+            data["source"] = custom_source
+            state_info["step"] = 5
             reply_markup = {
                 "keyboard": [
                     [{"text": "כן"}, {"text": "לא"}]
@@ -921,7 +969,7 @@ def process_state_step(chat_id, text, token):
                 "one_time_keyboard": True
             }
             send_message(token, chat_id, "🚦 *האם נסגרה העסקה?*", reply_markup=reply_markup)
-        elif step == 4:
+        elif step == 5:
             closed_str = text.strip()
             closed = closed_str in ['כן', 'yes', 'true', '1']
             data["closed"] = closed
@@ -933,7 +981,7 @@ def process_state_step(chat_id, text, token):
                     db["leads"] = []
                 new_lead = {
                     "id": int(time.time()),
-                    "date": datetime.date.today().isoformat(),
+                    "date": data["date"],
                     "client": data["client"],
                     "service": data["service"],
                     "source": data["source"],
@@ -944,11 +992,11 @@ def process_state_step(chat_id, text, token):
                 if chat_id in user_states:
                     del user_states[chat_id]
                 if save_data(db):
-                    send_message(token, chat_id, f"✅ *הפנייה נשמרה בהצלחה כעסקה סגורה!* 🎯\nלקוח: {data['client']} | שירות: {data['service']}\nהנתונים עודכנו ומסונכרנים עם האתר.", reply_markup={"remove_keyboard": True})
+                    send_message(token, chat_id, f"✅ *הפנייה נשמרה בהצלחה כעסקה סגורה!* 🎯\nתאריך פנייה: {data['date']} | לקוח: {data['client']} | שירות: {data['service']}\nהנתונים עודכנו ומסונכרנים עם האתר.", reply_markup={"remove_keyboard": True})
                 else:
                     send_message(token, chat_id, "❌ תקלה בשמירת הפנייה במערכת.", reply_markup={"remove_keyboard": True})
             else:
-                state_info["step"] = 5
+                state_info["step"] = 6
                 reply_markup = {
                     "keyboard": [
                         [{"text": "מחיר יקר"}, {"text": "זמן הגעה"}],
@@ -958,13 +1006,13 @@ def process_state_step(chat_id, text, token):
                     "one_time_keyboard": True
                 }
                 send_message(token, chat_id, "❌ *מה סיבת אי-סגירת העסקה?*", reply_markup=reply_markup)
-        elif step == 5:
+        elif step == 6:
             reason = text.strip()
             if reason == "חוסר זמינות שלי":
                 reason = "חוסר זמינות"
                 
             if reason == "אחר":
-                state_info["step"] = 6
+                state_info["step"] = 7
                 send_message(token, chat_id, "✍️ *פרט בקצרה את הסיבה בכתיבה חופשית:*", reply_markup={"remove_keyboard": True})
             else:
                 db = load_data()
@@ -972,7 +1020,7 @@ def process_state_step(chat_id, text, token):
                     db["leads"] = []
                 new_lead = {
                     "id": int(time.time()),
-                    "date": datetime.date.today().isoformat(),
+                    "date": data["date"],
                     "client": data["client"],
                     "service": data["service"],
                     "source": data["source"],
@@ -983,17 +1031,17 @@ def process_state_step(chat_id, text, token):
                 if chat_id in user_states:
                     del user_states[chat_id]
                 if save_data(db):
-                    send_message(token, chat_id, f"✅ *הפנייה נרשמה בהצלחה (לא נסגרה - {reason})* 🗑️\nלקוח: {data['client']} | שירות: {data['service']}\nהנתונים עודכנו ומסונכרנים עם האתר.", reply_markup={"remove_keyboard": True})
+                    send_message(token, chat_id, f"✅ *הפנייה נרשמה בהצלחה (לא נסגרה - {reason})* 🗑️\nתאריך פנייה: {data['date']} | לקוח: {data['client']} | שירות: {data['service']}\nהנתונים עודכנו ומסונכרנים עם האתר.", reply_markup={"remove_keyboard": True})
                 else:
                     send_message(token, chat_id, "❌ תקלה בשמירת הפנייה במערכת.", reply_markup={"remove_keyboard": True})
-        elif step == 6:
+        elif step == 7:
             custom_reason = text.strip()
             db = load_data()
             if "leads" not in db:
                 db["leads"] = []
             new_lead = {
                 "id": int(time.time()),
-                "date": datetime.date.today().isoformat(),
+                "date": data["date"],
                 "client": data["client"],
                 "service": data["service"],
                 "source": data["source"],
@@ -1004,7 +1052,7 @@ def process_state_step(chat_id, text, token):
             if chat_id in user_states:
                 del user_states[chat_id]
             if save_data(db):
-                send_message(token, chat_id, f"✅ *הפנייה נרשמה בהצלחה (לא נסגרה - אחר: {custom_reason})* 🗑️\nלקוח: {data['client']} | שירות: {data['service']}\nהנתונים עודכנו ומסונכרנים עם האתר.", reply_markup={"remove_keyboard": True})
+                send_message(token, chat_id, f"✅ *הפנייה נרשמה בהצלחה (לא נסגרה - אחר: {custom_reason})* 🗑️\nתאריך פנייה: {data['date']} | לקוח: {data['client']} | שירות: {data['service']}\nהנתונים עודכנו ומסונכרנים עם האתר.", reply_markup={"remove_keyboard": True})
             else:
                 send_message(token, chat_id, "❌ תקלה בשמירת הפנייה במערכת.", reply_markup={"remove_keyboard": True})
 
