@@ -208,19 +208,56 @@ function startPolling() {
 // Open modal for mobile QR login
 function openMobileSyncModal() {
     const token = localStorage.getItem('zachariah_github_token');
-    if (!token) {
-        alert("סנכרון ענן אינו פעיל. אנא ודא שקובץ config.json קיים ומכיל את המפתח שלך.");
-        return;
+    const input = document.getElementById('manualTokenInput');
+    if (input) {
+        input.value = token || '';
     }
-    const url = `https://zaharr1990.github.io/zachariah-handyman/?token=${token}`;
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`;
     
-    document.getElementById('mobileSyncQrCode').src = qrUrl;
+    // Generate QR code if token exists, otherwise show placeholder/empty
+    const tokenForQr = token || '';
+    const url = `https://zaharr1990.github.io/zachariah-handyman/?token=${tokenForQr}`;
+    const qrUrl = tokenForQr 
+        ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`
+        : '';
+        
+    const qrImg = document.getElementById('mobileSyncQrCode');
+    const qrContainer = document.getElementById('qrCodeContainer');
+    
+    if (qrImg) {
+        qrImg.src = qrUrl;
+        if (qrContainer) {
+            qrContainer.style.display = tokenForQr ? 'inline-block' : 'none';
+        }
+    }
+    
     document.getElementById('mobileSyncModal').style.display = 'flex';
 }
 
 function closeMobileSyncModal() {
     document.getElementById('mobileSyncModal').style.display = 'none';
+}
+
+function saveManualToken() {
+    const input = document.getElementById('manualTokenInput');
+    if (!input) return;
+    const token = input.value.trim();
+    if (!token) {
+        localStorage.removeItem('zachariah_github_token');
+        updateSyncButtonState('inactive');
+        showToast("הסנכרון נותק. 🛑");
+        closeMobileSyncModal();
+        loadData();
+        return;
+    }
+    if (!token.startsWith('ghp_')) {
+        alert("מפתח גישה לא תקין. עליו להתחיל ב-ghp_");
+        return;
+    }
+    localStorage.setItem('zachariah_github_token', token);
+    showToast("חיבור לענן בוצע בהצלחה! ☁️");
+    closeMobileSyncModal();
+    loadData();
+    startPolling();
 }
 
 // Update cloud sync visual button state
@@ -295,12 +332,29 @@ async function loadData() {
     }
     
     if (!loaded) {
-        const localData = localStorage.getItem('zachariah_business_data');
-        if (localData) {
-            appData = JSON.parse(localData);
-        } else {
-            appData = initialData;
+        try {
+            const response = await fetch('data.json?t=' + Date.now());
+            if (response.ok) {
+                const fetchedData = await response.json();
+                appData = fetchedData;
+                localStorage.setItem('zachariah_business_data', JSON.stringify(appData));
+                console.log("Successfully loaded latest public data.json.");
+                loaded = true;
+            } else {
+                throw new Error("Server returned non-ok status");
+            }
+        } catch (e) {
+            console.log("Could not fetch latest public data.json, falling back to local storage cache", e);
+            const localData = localStorage.getItem('zachariah_business_data');
+            if (localData) {
+                appData = JSON.parse(localData);
+                loaded = true;
+            }
         }
+    }
+    
+    if (!loaded) {
+        appData = initialData;
     }
     
     renderFinance();
