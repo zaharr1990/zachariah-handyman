@@ -1,13 +1,5 @@
 {
-  "expenses": [
-    {
-      "id": 1,
-      "date": "2026-05-15",
-      "category": "לימודים וקורסים",
-      "description": "קורס מנעולנות מעשי",
-      "amount": 2500
-    }
-  ],
+  "expenses": [],
   "income": [],
   "tasks": [
     {
