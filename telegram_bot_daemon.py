@@ -5,6 +5,7 @@ import time
 import os
 import sys
 import datetime
+import base64
 
 # Configure stdout/stderr to support UTF-8 (emojis and Hebrew) on Windows
 if hasattr(sys.stdout, 'reconfigure'):
@@ -15,6 +16,10 @@ if hasattr(sys.stderr, 'reconfigure'):
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(SCRIPT_DIR, "config.json")
 DATA_PATH = os.path.join(SCRIPT_DIR, "data.json")
+
+GITHUB_REPO_OWNER = 'zaharr1990'
+GITHUB_REPO_NAME = 'zachariah-handyman'
+GITHUB_FILE_PATH = 'data.json'
 
 # Load templates from notifier logic
 from telegram_notifier import ad_options, weekly_schedule
@@ -27,26 +32,100 @@ def load_config():
         return None
 
 def load_data():
-    try:
-        # Run git pull to sync changes from the web dashboard
-        os.system('git pull origin main')
-    except Exception as e:
-        print("Git pull during load failed:", e)
+    config = load_config()
+    token = config.get("github_token") if config else None
+    
+    if token:
+        try:
+            url = f"https://api.github.com/repos/{GITHUB_REPO_OWNER}/{GITHUB_REPO_NAME}/contents/{GITHUB_FILE_PATH}"
+            req = urllib.request.Request(
+                url + f"?t={int(time.time())}",
+                headers={
+                    'Authorization': f'Bearer {token}',
+                    'Accept': 'application/vnd.github.v3+json',
+                    'User-Agent': 'ZachariahHandymanBot'
+                }
+            )
+            with urllib.request.urlopen(req) as res:
+                response_data = json.loads(res.read().decode('utf-8'))
+                content_bytes = base64.b64decode(response_data['content'])
+                data = json.loads(content_bytes.decode('utf-8'))
+                
+                # Update local cache backup
+                with open(DATA_PATH, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+                return data
+        except Exception as e:
+            print("Failed to load latest data from GitHub API, falling back to local file:", e)
+            
+    # Local fallback
     try:
         with open(DATA_PATH, 'r', encoding='utf-8') as f:
             return json.load(f)
     except:
-        return {"expenses": [], "income": [], "tasks": []}
+        return {"expenses": [], "income": [], "tasks": [], "leads": []}
 
 def save_data(data):
+    # 1. Save locally as backup first
     try:
         with open(DATA_PATH, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
-        # Push update to GitHub Pages automatically
-        os.system('git add data.json && git commit -m "Auto-update data from Telegram" && git push origin main')
-        return True
     except Exception as e:
-        print("Error saving/pushing data:", e)
+        print("Failed to save local data backup:", e)
+        
+    config = load_config()
+    token = config.get("github_token") if config else None
+    if not token:
+        print("GitHub token missing in config.json. Cannot push to cloud.")
+        return False
+        
+    try:
+        url = f"https://api.github.com/repos/{GITHUB_REPO_OWNER}/{GITHUB_REPO_NAME}/contents/{GITHUB_FILE_PATH}"
+        
+        # A. Fetch current remote version to get latest sha
+        req_get = urllib.request.Request(
+            url + f"?t={int(time.time())}",
+            headers={
+                'Authorization': f'Bearer {token}',
+                'Accept': 'application/vnd.github.v3+json',
+                'User-Agent': 'ZachariahHandymanBot'
+            }
+        )
+        with urllib.request.urlopen(req_get) as res_get:
+            remote_info = json.loads(res_get.read().decode('utf-8'))
+            current_sha = remote_info['sha']
+            
+        # B. Encode data to Base64
+        content_bytes = json.dumps(data, indent=2, ensure_ascii=False).encode('utf-8')
+        base64_content = base64.b64encode(content_bytes).decode('utf-8')
+        
+        # C. PUT back to GitHub API
+        put_payload = json.dumps({
+            "message": "Auto-update business data from Telegram Bot",
+            "content": base64_content,
+            "sha": current_sha
+        }).encode('utf-8')
+        
+        req_put = urllib.request.Request(
+            url,
+            method='PUT',
+            data=put_payload,
+            headers={
+                'Authorization': f'Bearer {token}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/vnd.github.v3+json',
+                'User-Agent': 'ZachariahHandymanBot'
+            }
+        )
+        with urllib.request.urlopen(req_put) as res_put:
+            if res_put.status in [200, 201]:
+                print("Successfully pushed data update to GitHub via API.")
+                return True
+            else:
+                print("Failed to push data to GitHub, status:", res_put.status)
+                return False
+    except Exception as e:
+        print("Error during saving/pushing data via GitHub API:", e)
         return False
 
 def send_message(token, chat_id, text):

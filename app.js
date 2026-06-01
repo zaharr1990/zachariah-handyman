@@ -83,7 +83,7 @@ const agentTemplates = {
 };
 
 // Initialize Application
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
     // Set date input to today
     const dateInput = document.getElementById('transDate');
     if (dateInput) {
@@ -95,6 +95,9 @@ window.addEventListener('DOMContentLoaded', () => {
     if (leadDateInput) {
         leadDateInput.value = new Date().toISOString().split('T')[0];
     }
+    
+    // Initialize authentication and configuration load
+    await checkAuthAndConfig();
     
     // Load data
     loadData();
@@ -119,20 +122,179 @@ function switchTab(tabId) {
     }
 }
 
-// Data management (Local Storage & JSON fetch)
-async function loadData() {
-    try {
-        // Always fetch the absolute latest data.json from GitHub Pages (using cache buster)
-        const response = await fetch('data.json?t=' + Date.now());
-        if (response.ok) {
-            const fetchedData = await response.json();
-            appData = fetchedData;
-            localStorage.setItem('zachariah_business_data', JSON.stringify(appData));
-        } else {
-            throw new Error("Server returned non-ok status");
+const GITHUB_REPO_OWNER = 'zaharr1990';
+const GITHUB_REPO_NAME = 'zachariah-handyman';
+const GITHUB_FILE_PATH = 'data.json';
+
+let pollingInterval = null;
+
+// Check auth token from local config or query param
+async function checkAuthAndConfig() {
+    // 1. Check query parameter (from scan of QR code)
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlToken = urlParams.get('token');
+    if (urlToken) {
+        localStorage.setItem('zachariah_github_token', urlToken);
+        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+        showToast("חיבור מובייל בוצע בהצלחה! 📱☁️");
+    }
+    
+    // 2. Try fetching config.json on localhost
+    let token = localStorage.getItem('zachariah_github_token');
+    if (!token) {
+        try {
+            const res = await fetch('config.json?t=' + Date.now());
+            if (res.ok) {
+                const configData = await res.json();
+                if (configData.github_token) {
+                    localStorage.setItem('zachariah_github_token', configData.github_token);
+                    token = configData.github_token;
+                    showToast("חיבור אוטומטי למחשב בוצע בהצלחה! 💻☁️");
+                }
+            }
+        } catch (e) {
+            console.log("Not running locally or config.json missing. Skipping local token load.");
         }
-    } catch (e) {
-        console.log("Could not fetch latest data.json, falling back to local storage cache", e);
+    }
+    
+    updateSyncButtonState(token ? 'success' : 'inactive');
+    
+    if (token) {
+        startPolling();
+    }
+}
+
+// Background polling for changes from other devices
+function startPolling() {
+    if (pollingInterval) clearInterval(pollingInterval);
+    pollingInterval = setInterval(async () => {
+        const token = localStorage.getItem('zachariah_github_token');
+        if (!token) return;
+        
+        try {
+            const url = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}`;
+            const response = await fetch(url + '?t=' + Date.now(), {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Cache-Control': 'no-cache'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const currentSha = localStorage.getItem('zachariah_github_file_sha');
+                if (data.sha !== currentSha) {
+                    console.log("Cloud database changed. Updating local view...");
+                    const decodedContent = decodeURIComponent(escape(atob(data.content)));
+                    appData = JSON.parse(decodedContent);
+                    localStorage.setItem('zachariah_business_data', JSON.stringify(appData));
+                    localStorage.setItem('zachariah_github_file_sha', data.sha);
+                    
+                    renderFinance();
+                    renderTasks();
+                    renderCRM();
+                    
+                    updateSyncButtonState('success');
+                }
+            }
+        } catch (e) {
+            console.error("Polling fetch error:", e);
+        }
+    }, 30000);
+}
+
+// Open modal for mobile QR login
+function openMobileSyncModal() {
+    const token = localStorage.getItem('zachariah_github_token');
+    if (!token) {
+        alert("סנכרון ענן אינו פעיל. אנא ודא שקובץ config.json קיים ומכיל את המפתח שלך.");
+        return;
+    }
+    const url = `https://zaharr1990.github.io/zachariah-handyman/?token=${token}`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`;
+    
+    document.getElementById('mobileSyncQrCode').src = qrUrl;
+    document.getElementById('mobileSyncModal').style.display = 'flex';
+}
+
+function closeMobileSyncModal() {
+    document.getElementById('mobileSyncModal').style.display = 'none';
+}
+
+// Update cloud sync visual button state
+function updateSyncButtonState(state) {
+    const btn = document.getElementById('syncIndicatorBtn');
+    const icon = document.getElementById('syncIndicatorIcon');
+    const text = document.getElementById('syncIndicatorText');
+    if (!btn || !icon || !text) return;
+    
+    if (state === 'inactive') {
+        btn.style.borderColor = 'var(--border-color)';
+        btn.style.color = 'var(--text-muted)';
+        icon.className = 'fa-solid fa-cloud';
+        text.innerText = 'חיבור ענן';
+    } else if (state === 'syncing') {
+        btn.style.borderColor = 'var(--primary)';
+        btn.style.color = 'var(--primary)';
+        icon.className = 'fa-solid fa-cloud-arrow-up fa-bounce';
+        text.innerText = 'מסתנכרן...';
+    } else if (state === 'success') {
+        btn.style.borderColor = 'var(--success)';
+        btn.style.color = 'var(--success)';
+        icon.className = 'fa-solid fa-cloud-arrow-down';
+        text.innerText = 'מסונכרן לענן';
+        setTimeout(() => {
+            if (localStorage.getItem('zachariah_github_token')) {
+                icon.className = 'fa-solid fa-cloud';
+            }
+        }, 1500);
+    } else if (state === 'error') {
+        btn.style.borderColor = 'var(--danger)';
+        btn.style.color = 'var(--danger)';
+        icon.className = 'fa-solid fa-circle-exclamation';
+        text.innerText = 'שגיאת סנכרון';
+    }
+}
+
+// Load data from cloud (fallback to localStorage)
+async function loadData() {
+    let loaded = false;
+    const token = localStorage.getItem('zachariah_github_token');
+    
+    if (token) {
+        updateSyncButtonState('syncing');
+        try {
+            const url = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}?t=${Date.now()}`;
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Cache-Control': 'no-cache'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const decodedContent = decodeURIComponent(escape(atob(data.content)));
+                appData = JSON.parse(decodedContent);
+                localStorage.setItem('zachariah_business_data', JSON.stringify(appData));
+                localStorage.setItem('zachariah_github_file_sha', data.sha);
+                updateSyncButtonState('success');
+                loaded = true;
+            } else if (response.status === 401 || response.status === 403) {
+                console.error("Authentication expired or invalid. Resetting sync status.");
+                localStorage.removeItem('zachariah_github_token');
+                updateSyncButtonState('inactive');
+            }
+        } catch (e) {
+            console.error("Failed to load business data from GitHub Pages:", e);
+            updateSyncButtonState('error');
+        }
+    }
+    
+    if (!loaded) {
         const localData = localStorage.getItem('zachariah_business_data');
         if (localData) {
             appData = JSON.parse(localData);
@@ -140,14 +302,94 @@ async function loadData() {
             appData = initialData;
         }
     }
+    
     renderFinance();
     renderTasks();
     renderCRM();
 }
 
+// Write to Local cache
 function saveData() {
     localStorage.setItem('zachariah_business_data', JSON.stringify(appData));
 }
+
+// Write to Cloud database (pull first to merge, then push to prevent conflicts)
+async function saveDataCloud(changeCallback) {
+    // 1. Instantly update local UI for responsive experience
+    changeCallback(appData);
+    saveData();
+    
+    renderFinance();
+    renderTasks();
+    renderCRM();
+    
+    const token = localStorage.getItem('zachariah_github_token');
+    if (!token) return; // Silent local-only fallback
+    
+    updateSyncButtonState('syncing');
+    
+    try {
+        const url = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}`;
+        
+        // A. Fetch current remote version to avoid conflict
+        const getResponse = await fetch(url + '?t=' + Date.now(), {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'Cache-Control': 'no-cache'
+            }
+        });
+        
+        if (!getResponse.ok) {
+            throw new Error(`Cloud fetch failed with status ${getResponse.status}`);
+        }
+        
+        const remoteInfo = await getResponse.json();
+        const decodedContent = decodeURIComponent(escape(atob(remoteInfo.content)));
+        const remoteData = JSON.parse(decodedContent);
+        
+        // B. Apply change callback on remote data (structural merge)
+        changeCallback(remoteData);
+        
+        // C. PUT updated data back to GitHub
+        const base64Content = btoa(unescape(encodeURIComponent(JSON.stringify(remoteData, null, 2))));
+        const putResponse = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/vnd.github.v3+json'
+            },
+            body: JSON.stringify({
+                message: 'Auto-update business data from Web Dashboard',
+                content: base64Content,
+                sha: remoteInfo.sha
+            })
+        });
+        
+        if (putResponse.ok) {
+            const putData = await putResponse.json();
+            localStorage.setItem('zachariah_github_file_sha', putData.content.sha);
+            
+            // D. Set local state to the merged results
+            appData = remoteData;
+            saveData();
+            
+            renderFinance();
+            renderTasks();
+            renderCRM();
+            
+            updateSyncButtonState('success');
+        } else {
+            console.error("Commit update failed, status:", putResponse.status);
+            updateSyncButtonState('error');
+        }
+    } catch (e) {
+        console.error("Error during cloud sync save:", e);
+        updateSyncButtonState('error');
+    }
+}
+
 
 // Finance Section Logic
 function renderFinance() {
@@ -230,14 +472,13 @@ function addTransaction(e) {
         amount
     };
     
-    if (type === 'income') {
-        appData.income.push(newTransaction);
-    } else {
-        appData.expenses.push(newTransaction);
-    }
-    
-    saveData();
-    renderFinance();
+    saveDataCloud(db => {
+        if (type === 'income') {
+            db.income.push(newTransaction);
+        } else {
+            db.expenses.push(newTransaction);
+        }
+    });
     
     // Reset form fields
     document.getElementById('transAmount').value = '';
@@ -248,13 +489,13 @@ function addTransaction(e) {
 
 function deleteTransaction(id, type) {
     if (confirm("האם אתה בטוח שברצונך למחוק תנועה זו?")) {
-        if (type === 'income') {
-            appData.income = appData.income.filter(item => item.id !== id);
-        } else {
-            appData.expenses = appData.expenses.filter(item => item.id !== id);
-        }
-        saveData();
-        renderFinance();
+        saveDataCloud(db => {
+            if (type === 'income') {
+                db.income = db.income.filter(item => item.id !== id);
+            } else {
+                db.expenses = db.expenses.filter(item => item.id !== id);
+            }
+        });
         showToast("התנועה נמחקה. 🗑️");
     }
 }
@@ -290,14 +531,14 @@ function renderTasks() {
 }
 
 function toggleTask(id) {
-    appData.tasks = appData.tasks.map(t => {
-        if (t.id === id) {
-            return { ...t, completed: !t.completed };
-        }
-        return t;
+    saveDataCloud(db => {
+        db.tasks = db.tasks.map(t => {
+            if (t.id === id) {
+                return { ...t, completed: !t.completed };
+            }
+            return t;
+        });
     });
-    saveData();
-    renderTasks();
     showToast("סטטוס המשימה עודכן! 🎯");
 }
 
@@ -314,9 +555,9 @@ function addTask(e) {
         targetDate
     };
     
-    appData.tasks.push(newTask);
-    saveData();
-    renderTasks();
+    saveDataCloud(db => {
+        db.tasks.push(newTask);
+    });
     
     document.getElementById('taskText').value = '';
     document.getElementById('taskDate').value = '';
@@ -598,11 +839,10 @@ function addLead(e) {
         reason
     };
     
-    if (!appData.leads) appData.leads = [];
-    appData.leads.push(newLead);
-    
-    saveData();
-    renderCRM();
+    saveDataCloud(db => {
+        if (!db.leads) db.leads = [];
+        db.leads.push(newLead);
+    });
     
     // Reset Form
     document.getElementById('leadClient').value = '';
@@ -625,9 +865,9 @@ function addLead(e) {
 // Delete Lead
 function deleteLead(id) {
     if (confirm("האם אתה בטוח שברצונך למחוק פנייה זו מהמעקב?")) {
-        appData.leads = appData.leads.filter(l => l.id !== id);
-        saveData();
-        renderCRM();
+        saveDataCloud(db => {
+            db.leads = db.leads.filter(l => l.id !== id);
+        });
         showToast("הפנייה נמחקה. 🗑️");
     }
 }

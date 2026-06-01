@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>זכריה - פתרונות ושירותים לבית</title>
-    <link rel="stylesheet" href="style.css?v=2.0.6">
+    <link rel="stylesheet" href="style.css?v=2.0.7">
     <!-- FontAwesome for beautiful icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -21,8 +21,14 @@
                     <p>מערכת ניהול חכמה וסוכני AI • ירוחם והסביבה</p>
                 </div>
             </div>
-            <div class="status-badge" id="statusBadge">
-                <i class="fa-solid fa-circle-check"></i> הסוכנים במצב זמין
+            <div class="header-actions" style="display: flex; gap: 10px; align-items: center;">
+                <div class="status-badge" id="statusBadge">
+                    <i class="fa-solid fa-circle-check"></i> הסוכנים במצב זמין
+                </div>
+                <button id="syncIndicatorBtn" class="sync-settings-btn" onclick="openMobileSyncModal()" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); border-radius: 8px; color: #fff; padding: 8px 12px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;">
+                    <i class="fa-solid fa-cloud" id="syncIndicatorIcon"></i>
+                    <span id="syncIndicatorText">חיבור ענן</span>
+                </button>
             </div>
         </header>
 
@@ -107,9 +113,6 @@
                             <button type="submit" class="btn">
                                 <i class="fa-solid fa-save"></i> שמור תנועה
                             </button>
-                            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 8px; text-align: center;">
-                                <i class="fa-solid fa-circle-info"></i> לעדכון מסונכרן בין המחשב לטלפון, מומלץ להזין תנועות דרך בוט הטלגרם.
-                            </span>
                         </form>
                     </div>
 
@@ -277,9 +280,6 @@
                             <button type="submit" class="btn">
                                 <i class="fa-solid fa-user-check"></i> שמור פנייה
                             </button>
-                            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 8px; text-align: center;">
-                                <i class="fa-solid fa-circle-info"></i> לעדכון מסונכרן בין המחשב לטלפון, מומלץ להזין פניות דרך בוט הטלגרם.
-                            </span>
                         </form>
                     </div>
 
@@ -401,9 +401,31 @@
         </main>
     </div>
 
+    <!-- Mobile Sync Modal -->
+    <div class="modal" id="mobileSyncModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+        <div class="card" style="width: 90%; max-width: 450px; margin: 0; padding: 25px; border: 1px solid var(--primary); box-shadow: 0 0 25px rgba(0, 200, 255, 0.2); animation: modalFadeIn 0.3s ease; text-align: center;">
+            <h2 class="card-title" style="color: var(--primary); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; margin-bottom: 15px; text-align: right;">
+                <span><i class="fa-solid fa-mobile-screen-button"></i> חיבור מהיר לטלפון הנייד</span>
+                <button onclick="closeMobileSyncModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px;"><i class="fa-solid fa-xmark"></i></button>
+            </h2>
+            <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; text-align: right;">
+                סרוק את קוד ה-QR הבא באמצעות מצלמת הטלפון שלך. הקישור יפתח את האתר בנייד ויחבר אותו אוטומטית לענן ולמחשב – ללא צורך בהגדרות או בהעתקת מפתחות גישה!
+            </p>
+            <div style="background: white; padding: 15px; border-radius: 12px; display: inline-block; margin: 10px 0;">
+                <img id="mobileSyncQrCode" src="" alt="קוד QR לחיבור" style="display: block; width: 220px; height: 220px;">
+            </div>
+            <div style="margin-top: 15px; font-size: 12px; color: var(--primary);">
+                <i class="fa-solid fa-circle-info"></i> הסנכרון יתבצע באופן דו-כיווני מיידי.
+            </div>
+            <button class="btn" style="background: var(--primary); margin-top: 20px;" onclick="closeMobileSyncModal()">
+                סגור
+            </button>
+        </div>
+    </div>
+
     <!-- Toast Notification element -->
     <div class="toast" id="toast">הטקסט הועתק בהצלחה! 📋</div>
 
-    <script src="app.js?v=2.0.6"></script>
+    <script src="app.js?v=2.0.7"></script>
 </body>
 </html>
