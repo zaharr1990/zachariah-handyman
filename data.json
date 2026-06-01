@@ -29,6 +29,15 @@
       "source": "פייסבוק",
       "closed": false,
       "reason": "חוסר זמינות"
+    },
+    {
+      "id": 1780299849,
+      "date": "2026-05-18",
+      "client": "אירה",
+      "service": "אריה",
+      "source": "בטל",
+      "closed": false,
+      "reason": "אחר: כ"
     }
   ]
 }
