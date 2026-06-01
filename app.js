@@ -210,29 +210,54 @@ function startPolling() {
                     }
                 }
             } else {
-                const url = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}`;
-                const response = await fetch(url + '?t=' + Date.now(), {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Cache-Control': 'no-cache'
+                try {
+                    const url = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}`;
+                    const response = await fetch(url + '?t=' + Date.now(), {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Cache-Control': 'no-cache'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        const currentSha = localStorage.getItem('zachariah_github_file_sha');
+                        if (data.sha !== currentSha) {
+                            console.log("Cloud database changed. Updating local view...");
+                            appData = JSON.parse(decodeBase64Utf8(data.content));
+                            localStorage.setItem('zachariah_business_data', JSON.stringify(appData));
+                            localStorage.setItem('zachariah_github_file_sha', data.sha);
+                            
+                            renderFinance();
+                            renderTasks();
+                            renderCRM();
+                            
+                            updateSyncButtonState('success');
+                        }
+                    } else {
+                        throw new Error(`API status ${response.status}`);
                     }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    const currentSha = localStorage.getItem('zachariah_github_file_sha');
-                    if (data.sha !== currentSha) {
-                        console.log("Cloud database changed. Updating local view...");
-                        appData = JSON.parse(decodeBase64Utf8(data.content));
-                        localStorage.setItem('zachariah_business_data', JSON.stringify(appData));
-                        localStorage.setItem('zachariah_github_file_sha', data.sha);
+                } catch (e) {
+                    console.warn("Polling via GitHub API failed, trying raw.githubusercontent.com fallback...", e);
+                    const rawUrl = `https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/main/${GITHUB_FILE_PATH}?t=${Date.now()}`;
+                    const rawResponse = await fetch(rawUrl);
+                    if (rawResponse.ok) {
+                        const fetchedData = await rawResponse.json();
+                        const fetchedStr = JSON.stringify(fetchedData);
+                        const localStr = localStorage.getItem('zachariah_business_data');
                         
-                        renderFinance();
-                        renderTasks();
-                        renderCRM();
-                        
-                        updateSyncButtonState('success');
+                        if (fetchedStr !== localStr) {
+                            console.log("Raw cloud database changed. Updating local view...");
+                            appData = fetchedData;
+                            localStorage.setItem('zachariah_business_data', fetchedStr);
+                            
+                            renderFinance();
+                            renderTasks();
+                            renderCRM();
+                            
+                            updateSyncButtonState('success');
+                        }
                     }
                 }
             }
@@ -384,27 +409,33 @@ async function loadData() {
                     throw new Error(`Local proxy returned status ${response.status} ${response.statusText}`);
                 }
             } else {
-                const url = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}?t=${Date.now()}`;
-                const response = await fetch(url, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Cache-Control': 'no-cache'
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    fetchedData = JSON.parse(decodeBase64Utf8(data.content));
-                    localStorage.setItem('zachariah_github_file_sha', data.sha);
-                } else {
-                    let errMsg = `GitHub load error: ${response.status} ${response.statusText}`;
-                    if (response.status === 401 || response.status === 403) {
-                        console.error("Authentication expired or invalid. Resetting sync status.");
-                        localStorage.removeItem('zachariah_github_token');
-                        updateSyncButtonState('inactive');
+                try {
+                    const url = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}?t=${Date.now()}`;
+                    const response = await fetch(url, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Cache-Control': 'no-cache'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        fetchedData = JSON.parse(decodeBase64Utf8(data.content));
+                        localStorage.setItem('zachariah_github_file_sha', data.sha);
                     } else {
-                        updateSyncButtonState('error', errMsg);
+                        throw new Error(`GitHub load error: ${response.status} ${response.statusText}`);
+                    }
+                } catch (e) {
+                    console.warn("GitHub API failed, trying raw.githubusercontent.com fallback...", e);
+                    const rawUrl = `https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/main/${GITHUB_FILE_PATH}?t=${Date.now()}`;
+                    const rawResponse = await fetch(rawUrl);
+                    if (rawResponse.ok) {
+                        fetchedData = await rawResponse.json();
+                        updateSyncButtonState('success');
+                        loaded = true;
+                    } else {
+                        throw new Error(`CORS/API Blocked: ${e.message}. Fallback raw load failed: ${rawResponse.status}`);
                     }
                 }
             }
